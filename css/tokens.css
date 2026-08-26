@@ -1,0 +1,44 @@
+/* ============================================================
+   TOKENS
+   Change colours, fonts and spacing here. Nothing else needs
+   editing — every other file reads these values.
+   ============================================================ */
+
+:root{
+  /* --- accent (used in both themes) --- */
+  --flame:      #FF9B3D;   /* main accent */
+  --flame-hot:  #FFD166;   /* bright end of the gradient */
+  --ember:      #E2504A;   /* deep end of the gradient */
+
+  /* --- typefaces --- */
+  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-body:    'Sora', system-ui, sans-serif;
+  --font-data:    'JetBrains Mono', ui-monospace, monospace;
+
+  /* --- layout --- */
+  --gutter: clamp(20px, 5vw, 72px);
+  --max:    1120px;
+  --radius: 16px;
+
+  --ease: cubic-bezier(.22,.61,.36,1);
+}
+
+/* --- night theme (default) --- */
+[data-theme="night"]{
+  --bg:      #0B0A1F;
+  --surface: #14123099;
+  --line:    #2C2856;
+  --ink:     #F3F1FF;
+  --mist:    #9C98C4;
+  --glow:    radial-gradient(circle at 50% 40%, #241C4A 0%, #0B0A1F 62%);
+}
+
+/* --- day theme --- */
+[data-theme="day"]{
+  --bg:      #F7F0E4;
+  --surface: #FFFFFFB3;
+  --line:    #E0D2BC;
+  --ink:     #1A1636;
+  --mist:    #6B6489;
+  --glow:    radial-gradient(circle at 50% 40%, #FFF6E6 0%, #F7F0E4 62%);
+}
