@@ -38,9 +38,9 @@ window.AARTI = {
 
   /* --- the 3D ring in the hero --- */
   ring: {
-    hot:    '#FFD166',   // top of the flame
-    mid:    '#FF9B3D',
-    cool:   '#E2504A',   // base of the flame
+    hot:    '#F7DCA8',   // top of the flame
+    mid:    '#E0A253',
+    cool:   '#B0553C',   // base of the flame
     bars:   72,          // fewer = simpler, lighter
     radius: 6.2,
     speed:  0.085,       // rotation; 0 stops it spinning
