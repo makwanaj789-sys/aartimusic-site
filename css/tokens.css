@@ -2,13 +2,16 @@
    TOKENS
    Change colours, fonts and spacing here. Nothing else needs
    editing — every other file reads these values.
+
+   Palette: golden-hour warmth. Amber light, cream highlights,
+   deep espresso shadows.
    ============================================================ */
 
 :root{
   /* --- accent (used in both themes) --- */
-  --flame:      #FF9B3D;   /* main accent */
-  --flame-hot:  #FFD166;   /* bright end of the gradient */
-  --ember:      #E2504A;   /* deep end of the gradient */
+  --flame:      #E0A253;   /* golden amber — main accent */
+  --flame-hot:  #F7DCA8;   /* pale gold — bright end */
+  --ember:      #B0553C;   /* warm terracotta — deep end */
 
   /* --- typefaces --- */
   --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
@@ -23,22 +26,22 @@
   --ease: cubic-bezier(.22,.61,.36,1);
 }
 
-/* --- night theme (default) --- */
+/* --- night: a warm dark room lit by lamplight --- */
 [data-theme="night"]{
-  --bg:      #0B0A1F;
-  --surface: #14123099;
-  --line:    #2C2856;
-  --ink:     #F3F1FF;
-  --mist:    #9C98C4;
-  --glow:    radial-gradient(circle at 50% 40%, #241C4A 0%, #0B0A1F 62%);
+  --bg:      #12100E;
+  --surface: #1E1917B3;
+  --line:    #322A25;
+  --ink:     #F5EDE3;
+  --mist:    #A2938A;
+  --glow:    radial-gradient(circle at 50% 38%, #2C2119 0%, #12100E 62%);
 }
 
-/* --- day theme --- */
+/* --- day: warm porcelain, not yellow --- */
 [data-theme="day"]{
-  --bg:      #F7F0E4;
-  --surface: #FFFFFFB3;
-  --line:    #E0D2BC;
-  --ink:     #1A1636;
-  --mist:    #6B6489;
-  --glow:    radial-gradient(circle at 50% 40%, #FFF6E6 0%, #F7F0E4 62%);
+  --bg:      #F4EFE9;
+  --surface: #FFFFFFC4;
+  --line:    #E0D5C8;
+  --ink:     #241C17;
+  --mist:    #6E6058;
+  --glow:    radial-gradient(circle at 50% 38%, #FFFCF8 0%, #EFE7DC 62%);
 }
