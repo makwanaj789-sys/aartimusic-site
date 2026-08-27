@@ -248,14 +248,67 @@ body{
    COMMANDS
    ============================================================ */
 .cmd-grid{ perspective:1000px; display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:12px; }
+
 .cmd{
-  border:1px solid var(--line); border-radius:14px;
-  padding:16px 18px; background:var(--surface);
-  transition:border-color .3s var(--ease), transform .3s var(--ease);
+  position:relative; overflow:hidden;
+  border:1px solid var(--line); border-radius:var(--radius);
+  padding:20px 20px 18px; background:var(--surface);
+  transition:border-color .35s var(--ease), background-color .35s var(--ease);
 }
-.cmd:hover{ border-color:var(--flame); }
-.cmd code{ font-size:13.5px; font-weight:700; color:var(--flame); }
-.cmd span{ display:block; margin-top:5px; font-size:13px; color:var(--mist); }
+
+/* a band of light sweeps across on hover */
+.cmd::before{
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(105deg,
+    transparent 30%,
+    color-mix(in srgb, var(--flame) 22%, transparent) 50%,
+    transparent 70%);
+  transform:translateX(-120%);
+  transition:transform .8s var(--ease);
+  pointer-events:none;
+}
+.cmd:hover::before{ transform:translateX(120%); }
+
+/* the accent bar down the left grows in */
+.cmd::after{
+  content:''; position:absolute; left:0; top:16%; bottom:16%;
+  width:2px; border-radius:2px;
+  background:linear-gradient(var(--flame-hot), var(--ember));
+  transform:scaleY(0); transform-origin:center;
+  transition:transform .4s var(--ease);
+}
+.cmd:hover::after{ transform:scaleY(1); }
+
+.cmd:hover{
+  border-color:color-mix(in srgb, var(--flame) 55%, var(--line));
+  background:color-mix(in srgb, var(--flame) 7%, var(--surface));
+}
+
+/* the command itself sits in a chip */
+.cmd code{
+  display:inline-block;
+  font-size:13.5px; font-weight:700; color:var(--flame);
+  background:color-mix(in srgb, var(--flame) 13%, transparent);
+  border:1px solid color-mix(in srgb, var(--flame) 26%, transparent);
+  border-radius:8px; padding:5px 10px;
+  transition:background-color .35s var(--ease), border-color .35s var(--ease);
+}
+.cmd:hover code{
+  background:color-mix(in srgb, var(--flame) 22%, transparent);
+  border-color:color-mix(in srgb, var(--flame) 48%, transparent);
+}
+.cmd span{ display:block; margin-top:11px; font-size:13.5px; color:var(--mist); }
+
+/* ============================================================
+   SCROLL REVEAL
+   Elements marked data-reveal ease in as they enter the view.
+   js/reveal.js adds .is-in and staggers the delay.
+   ============================================================ */
+[data-reveal]{
+  opacity:0; transform:translateY(22px);
+  transition:opacity .75s var(--ease), transform .75s var(--ease);
+}
+[data-reveal].is-in{ opacity:1; transform:none; }
 
 /* ============================================================
    CONTACT
@@ -334,4 +387,5 @@ body{
   *{ animation-duration:.01ms !important; transition-duration:.01ms !important; }
   html{ scroll-behavior:auto; }
   #ring{ display:none; }
+  [data-reveal]{ opacity:1 !important; transform:none !important; }
 }
