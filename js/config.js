@@ -18,7 +18,7 @@ window.AARTI = {
      The picture that sits inside the ring. Put the file in an
      assets/ folder in your repo. Leave empty ('') and the ring
      simply appears on its own.                                 */
-  heroImage: 'assets/pfp.jpg',
+  heroImage: 'assets/pfp.png',
 
   /* --- live stats ---
      Your bot's public HTTPS address. Leave empty until the
