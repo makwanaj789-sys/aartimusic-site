@@ -31,7 +31,7 @@
       <li><a href="#contact">Contact</a></li>
     </ul>
 
-    <button class="toggle" id="themeBtn" aria-label="Switch between night and day">
+    <button type="button" class="toggle" id="themeBtn" aria-pressed="false" aria-label="Switch between night and day">
       <span class="ico moon">☾</span>
       <span class="ico sun">☀</span>
       <span class="knob"></span>
@@ -41,7 +41,12 @@
 
 <!-- ============ HERO ============ -->
 <header class="hero" id="top">
-  <canvas id="ring"></canvas>
+
+  <div class="hero-art">
+    <canvas id="ring"></canvas>
+    <img id="heroImg" class="hero-pfp" alt="Aarti Music" hidden>
+  </div>
+
   <div class="wrap hero-in">
     <p class="eyebrow">Telegram music bot</p>
     <h1 class="wordmark">
@@ -69,10 +74,10 @@
     </div>
 
     <div class="stat-grid">
-      <div class="stat" data-tilt><div class="num" data-stat="users">—</div><div class="lbl">Listeners</div></div>
-      <div class="stat" data-tilt><div class="num" data-stat="groups">—</div><div class="lbl">Groups</div></div>
-      <div class="stat" data-tilt><div class="num" data-stat="songs">—</div><div class="lbl">Songs cached</div></div>
-      <div class="stat" data-tilt><div class="num" data-stat="searches">—</div><div class="lbl">Searches</div></div>
+      <div class="stat" data-tilt data-reveal><div class="num" data-stat="users">—</div><div class="lbl">Listeners</div></div>
+      <div class="stat" data-tilt data-reveal><div class="num" data-stat="groups">—</div><div class="lbl">Groups</div></div>
+      <div class="stat" data-tilt data-reveal><div class="num" data-stat="songs">—</div><div class="lbl">Songs cached</div></div>
+      <div class="stat" data-tilt data-reveal><div class="num" data-stat="searches">—</div><div class="lbl">Searches</div></div>
     </div>
     <p class="stat-note" id="statNote">Loading…</p>
   </section>
@@ -82,7 +87,7 @@
     <div class="sec-head"><h2>What it does</h2></div>
     <div class="feat-list">
 
-      <div class="feat">
+      <div class="feat" data-reveal>
         <div class="k">INLINE</div>
         <div>
           <h3>Works in chats it isn't even in</h3>
@@ -90,7 +95,7 @@
         </div>
       </div>
 
-      <div class="feat">
+      <div class="feat" data-reveal>
         <div class="k">VOICE</div>
         <div>
           <h3>Say the song instead of typing it</h3>
@@ -98,7 +103,7 @@
         </div>
       </div>
 
-      <div class="feat">
+      <div class="feat" data-reveal>
         <div class="k">CALLS</div>
         <div>
           <h3>Plays into group voice chats</h3>
@@ -106,7 +111,7 @@
         </div>
       </div>
 
-      <div class="feat">
+      <div class="feat" data-reveal>
         <div class="k">VAULT</div>
         <div>
           <h3>Keeps the ones you liked</h3>
@@ -114,7 +119,7 @@
         </div>
       </div>
 
-      <div class="feat">
+      <div class="feat" data-reveal>
         <div class="k">SPEED</div>
         <div>
           <h3>Popular tracks arrive instantly</h3>
@@ -122,7 +127,7 @@
         </div>
       </div>
 
-      <div class="feat">
+      <div class="feat" data-reveal>
         <div class="k">TASTE</div>
         <div>
           <h3>Suggests where to go next</h3>
@@ -137,14 +142,14 @@
   <section class="section wrap" id="commands">
     <div class="sec-head"><h2>Commands</h2></div>
     <div class="cmd-grid">
-      <div class="cmd" data-tilt><code>/am &lt;song&gt;</code><span>Search and download in a group</span></div>
-      <div class="cmd" data-tilt><code>/vs</code><span>Reply to a voice note to search it</span></div>
-      <div class="cmd" data-tilt><code>/vplay &lt;song&gt;</code><span>Play in the group voice chat</span></div>
-      <div class="cmd" data-tilt><code>/favshuffle</code><span>Shuffle your saved tracks</span></div>
-      <div class="cmd" data-tilt><code>/vqueue</code><span>See what's lined up next</span></div>
-      <div class="cmd" data-tilt><code>/myfavorites</code><span>Open your vault</span></div>
-      <div class="cmd" data-tilt><code>/mystats</code><span>Your listening numbers</span></div>
-      <div class="cmd" data-tilt><code>/set</code><span>Choose who can control playback</span></div>
+      <div class="cmd" data-tilt data-reveal><code>/am &lt;song&gt;</code><span>Search and download in a group</span></div>
+      <div class="cmd" data-tilt data-reveal><code>/vs</code><span>Reply to a voice note to search it</span></div>
+      <div class="cmd" data-tilt data-reveal><code>/vplay &lt;song&gt;</code><span>Play in the group voice chat</span></div>
+      <div class="cmd" data-tilt data-reveal><code>/favshuffle</code><span>Shuffle your saved tracks</span></div>
+      <div class="cmd" data-tilt data-reveal><code>/vqueue</code><span>See what's lined up next</span></div>
+      <div class="cmd" data-tilt data-reveal><code>/myfavorites</code><span>Open your vault</span></div>
+      <div class="cmd" data-tilt data-reveal><code>/mystats</code><span>Your listening numbers</span></div>
+      <div class="cmd" data-tilt data-reveal><code>/set</code><span>Choose who can control playback</span></div>
     </div>
   </section>
 
@@ -157,25 +162,25 @@
 
     <div class="contact-grid">
 
-      <a class="card" data-tilt data-link="owner" href="#">
+      <a class="card" data-tilt data-reveal data-link="owner" href="#">
         <span class="role">Developer</span>
         <span class="name" data-handle="owner">@umclon</span>
         <span class="desc">Message me directly on Telegram.</span>
       </a>
 
-      <a class="card" data-tilt data-link="updates" href="#">
+      <a class="card" data-tilt data-reveal data-link="updates" href="#">
         <span class="role">Updates</span>
         <span class="name" data-handle="updates">@clon_ch1t</span>
         <span class="desc">New features and downtime notices land here first.</span>
       </a>
 
-      <a class="card" data-tilt data-link="support" href="#">
+      <a class="card" data-tilt data-reveal data-link="support" href="#">
         <span class="role">Support group</span>
         <span class="name" data-handle="support">Support</span>
         <span class="desc">Ask a question where other users can help too.</span>
       </a>
 
-      <a class="card" data-tilt data-link="email" href="#">
+      <a class="card" data-tilt data-reveal data-link="email" href="#">
         <span class="role">Email</span>
         <span class="name" data-handle="email">Email</span>
         <span class="desc">For anything that needs a longer reply.</span>
@@ -197,38 +202,8 @@
 <script src="js/links.js"></script>
 <script src="js/theme.js"></script>
 <script src="js/ring.js"></script>
+<script src="js/reveal.js"></script>
 <script src="js/tilt.js"></script>
 <script src="js/stats.js"></script>
 </body>
 </html>
->Support group</span>
-        <span class="name" data-handle="support">Support</span>
-        <span class="desc">Ask a question where other users can help too.</span>
-      </a>
-
-      <a class="card" data-tilt data-link="email" href="#">
-        <span class="role">Email</span>
-        <span class="name" data-handle="email">Email</span>
-        <span class="desc">For anything that needs a longer reply.</span>
-      </a>
-
-    </div>
-  </section>
-
-</main>
-
-<!-- ============ FOOTER ============ -->
-<footer class="foot wrap">
-  <span>Built by <a data-link="owner" href="#">@umclon</a> · <span id="year">2026</span></span>
-  <span><a data-link="updates" href="#">Updates channel</a></span>
-</footer>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/config.js"></script>
-<script src="js/links.js"></script>
-<script src="js/theme.js"></script>
-<script src="js/ring.js"></script>
-<script src="js/tilt.js"></script>
-<script src="js/stats.js"></script>
-</body>
-</html
