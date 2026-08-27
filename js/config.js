@@ -14,6 +14,12 @@ window.AARTI = {
   supportGroup:   '',            // e.g. 'aartimusic_support'
   email:          '',            // e.g. 'hello@aartimusic.com'
 
+  /* --- hero artwork ---
+     The picture that sits inside the ring. Put the file in an
+     assets/ folder in your repo. Leave empty ('') and the ring
+     simply appears on its own.                                 */
+  heroImage: 'assets/pfp.jpg',
+
   /* --- live stats ---
      Your bot's public HTTPS address. Leave empty until the
      endpoint is reachable — the tiles will say so honestly
