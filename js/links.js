@@ -44,6 +44,21 @@
     if (v) el.textContent = v;
   });
 
+  // the picture inside the hero ring
+  var art = document.getElementById('heroImg');
+  if (art){
+    if (c.heroImage){
+      art.addEventListener('error', function(){
+        art.hidden = true;              // wrong path or missing file — ring alone
+        console.warn('hero image not found:', c.heroImage);
+      });
+      art.src = c.heroImage;
+      art.hidden = false;
+    } else {
+      art.hidden = true;
+    }
+  }
+
   // footer year
   var y = document.getElementById('year');
   if (y) y.textContent = new Date().getFullYear();
