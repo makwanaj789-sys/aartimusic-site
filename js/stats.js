@@ -1,12 +1,13 @@
 /* ============================================================
    LIVE STATS
-   Reads statsApi from config.js. If it isn't set or the server
-   can't be reached, the tiles say so rather than showing
-   numbers nobody counted.
+   Reads statsSource from config.js — normally stats.json,
+   which the bot rewrites once a day. If it isn't set or can't
+   be read, the tiles say so rather than showing numbers
+   nobody counted.
    ============================================================ */
 (function(){
   var cfg   = window.AARTI || {};
-  var base  = cfg.statsApi || '';
+  var src   = cfg.statsSource || '';
   var note  = document.getElementById('statNote');
   var cells = document.querySelectorAll('[data-stat]');
   if (!note || !cells.length) return;
@@ -15,8 +16,8 @@
     cells.forEach(function(c){ c.closest('.stat').classList.add('is-stale'); });
   }
 
-  if (!base){
-    note.textContent = 'Stats endpoint not connected yet.';
+  if (!src){
+    note.textContent = 'Stats not connected yet.';
     markStale();
     return;
   }
@@ -37,19 +38,29 @@
   }
 
   function load(){
-    fetch(base.replace(/\/$/, '') + '/api/stats', { cache:'no-store' })
+    // the query string stops a stale copy being served from cache
+    fetch(src + '?t=' + Date.now(), { cache:'no-store' })
       .then(function(r){
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
       })
       .then(function(d){
+        var got = 0;
+
         cells.forEach(function(el){
           var v = d[el.dataset.stat];
           if (typeof v === 'number'){
             el.closest('.stat').classList.remove('is-stale');
             countTo(el, v);
+            got++;
           }
         });
+
+        if (!got){
+          note.textContent = 'No numbers in the stats file yet.';
+          markStale();
+          return;
+        }
 
         if (d.updated_at){
           var when = new Date(d.updated_at * 1000);
@@ -61,12 +72,12 @@
         }
       })
       .catch(function(){
-        note.textContent = "Couldn't reach the server just now.";
+        note.textContent = "Couldn't read the stats file.";
         markStale();
       });
   }
 
   load();
-  var mins = cfg.statsRefreshMinutes || 30;
+  var mins = cfg.statsRefreshMinutes || 60;
   setInterval(load, mins * 60 * 1000);
 })();
