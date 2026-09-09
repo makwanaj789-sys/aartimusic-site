@@ -3,8 +3,10 @@
    Change colours, fonts and spacing here. Nothing else needs
    editing — every other file reads these values.
 
-   Palette: golden-hour warmth. Amber light, cream highlights,
-   deep espresso shadows.
+   Palette: near-black with golden-hour light. The background is
+   darker than a normal dark theme on purpose — additive glow
+   from the WebGL scene only reads when there is real black
+   behind it.
    ============================================================ */
 
 :root{
@@ -19,29 +21,34 @@
   --font-data:    'JetBrains Mono', ui-monospace, monospace;
 
   /* --- layout --- */
-  --gutter: clamp(20px, 5vw, 72px);
-  --max:    1120px;
-  --radius: 16px;
+  --gutter: clamp(18px, 5vw, 80px);
+  --max:    1320px;
+  --radius: 4px;           /* squared off — softer corners read as consumer app */
 
-  --ease: cubic-bezier(.22,.61,.36,1);
+  --ease:     cubic-bezier(.22,.61,.36,1);
+  --ease-out: cubic-bezier(.16,1,.3,1);
 }
 
-/* --- night: a warm dark room lit by lamplight --- */
+/* --- night: a dark room lit by one flame --- */
 [data-theme="night"]{
-  --bg:      #12100E;
-  --surface: #1E1917B3;
-  --line:    #322A25;
-  --ink:     #F5EDE3;
-  --mist:    #A2938A;
-  --glow:    radial-gradient(circle at 50% 38%, #2C2119 0%, #12100E 62%);
+  --bg:       #0A0908;
+  --bg-2:     #100E0C;
+  --surface:  #14110Fcc;
+  --line:     #241F1B;
+  --line-lit: #3A302A;
+  --ink:      #F7F1E8;
+  --mist:     #8C8079;
+  --glow:     radial-gradient(120% 80% at 50% 0%, #1C1510 0%, #0A0908 55%);
 }
 
-/* --- day: warm porcelain, not yellow --- */
+/* --- day: warm porcelain --- */
 [data-theme="day"]{
-  --bg:      #F4EFE9;
-  --surface: #FFFFFFC4;
-  --line:    #E0D5C8;
-  --ink:     #241C17;
-  --mist:    #6E6058;
-  --glow:    radial-gradient(circle at 50% 38%, #FFFCF8 0%, #EFE7DC 62%);
+  --bg:       #F4EFE9;
+  --bg-2:     #EDE6DD;
+  --surface:  #FFFFFFcc;
+  --line:     #DFD4C7;
+  --line-lit: #C9B9A6;
+  --ink:      #17120F;
+  --mist:     #6E6058;
+  --glow:     radial-gradient(120% 80% at 50% 0%, #FFFCF8 0%, #EDE6DD 55%);
 }
