@@ -15,56 +15,47 @@ window.AARTI = {
   email:          '',            // e.g. 'hello@aartimusic.com'
 
   /* --- hero artwork ---
-     The picture that sits inside the ring. Put the file in an
-     assets/ folder in your repo. Leave empty ('') and the ring
-     simply appears on its own.                                 */
+     Small circular picture above the wordmark. Put the file in
+     assets/. Leave empty ('') and it simply isn't shown.       */
   heroImage: 'assets/pfp.png',
 
   /* --- live stats ---
-     Your bot's public HTTPS address. Leave empty until the
-     endpoint is reachable — the tiles will say so honestly
-     instead of showing invented numbers.
-     Example: 'https://api.aartimusic.example'                */
-  statsApi: '',
-
-  /* how often the page re-checks, in minutes.
-     The server caches for a full day, so this only matters
-     for a tab someone left open.                             */
-  statsRefreshMinutes: 30,
+     Where the numbers come from: a file sitting next to
+     index.html that the bot rewrites once a day, or a full
+     https address. Empty means the tiles say so honestly
+     instead of showing invented numbers.                       */
+  statsSource: 'stats.json',
+  statsRefreshMinutes: 60,
 
   /* --- motion input ---
-     One steering signal feeds both the hero ring and the card
-     tilt: a mouse, a dragging finger, or the phone's own tilt,
-     whichever the visitor is using.                            */
+     One steering signal feeds the scene and the card tilt: a
+     mouse, a dragging finger, or the phone's own tilt.          */
   motion: {
     ease: 0.075,   // how lazily it follows. 0.02 is syrup, 0.2 is snappy
     gyro: true     // false switches off phone-tilt steering everywhere
   },
 
-  /* --- card tilt ---
-     Cards lean toward the pointer on desktop, and with the
-     handset on phones. Set enabled:false to switch it off.     */
+  /* --- card tilt --- */
   tilt: {
     enabled:  true,
-    maxAngle: 9,    // degrees of lean; 4-6 is subtle, 12+ is loud
-    lift:     16,   // px the card rises toward the viewer
-    shine:    34    // % accent colour in the moving highlight
+    maxAngle: 8,    // degrees of lean; 4-6 is subtle, 12+ is loud
+    lift:     14,   // px the card rises toward the viewer
+    shine:    30    // % accent colour in the moving highlight
   },
 
-  /* --- the 3D ring in the hero ---
-     Three nested rings of bars, embers rising through them,
-     and a halo behind.                                         */
-  ring: {
+  /* --- the WebGL scene ---
+     Three nested rings of bars over a receding grid floor, with
+     embers drifting up through them. The camera pulls back as
+     the page scrolls, so the whole site sits in one space.
+     Bars and embers are cut automatically on small screens.    */
+  scene: {
     hot:    '#F7DCA8',   // top of the flame
     mid:    '#E0A253',
     cool:   '#B0553C',   // base of the flame
 
-    bars:   72,          // bars in the middle ring; the other two scale off it
-    radius: 6.2,
-    speed:  0.085,       // rotation; 0 stops it spinning
-
-    depth:  1,           // how hard it leans. 0.6 is calm, 1.6 is dramatic
-    embers: 120,         // rising sparks; 0 removes them
-    halo:   true         // soft glow behind the rings
+    bars:   70,          // bars in the middle ring; the others scale off it
+    radius: 6.0,
+    embers: 110,         // rising sparks; 0 removes them
+    grid:   true         // the wireframe floor. false leaves the rings floating
   }
 };
