@@ -4,7 +4,7 @@
    Reads a mouse, a dragging finger, or the phone's own tilt,
    and hands back two smoothed numbers between -1 and 1.
 
-   ring.js and tilt.js both read from here, so the whole page
+   scene.js and tilt.js both read from here, so the whole page
    leans together instead of each piece guessing separately.
 
    window.AARTI_MOTION
@@ -14,59 +14,48 @@
    ============================================================ */
 (function(){
 
-  var M = window.AARTI_MOTION = {
-    x: 0, y: 0,
-    source: 'idle',
-    active: false
-  };
+  var M = window.AARTI_MOTION = { x:0, y:0, source:'idle', active:false };
 
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   var cfg  = (window.AARTI && window.AARTI.motion) || {};
-  var EASE = cfg.ease === undefined ? 0.075 : cfg.ease;   // lower = lazier follow
+  var EASE = cfg.ease === undefined ? 0.075 : cfg.ease;
   var GYRO = cfg.gyro !== false;
 
-  var aimX = 0, aimY = 0;
-  var lastTouch = 0;
+  var aimX = 0, aimY = 0, lastTouch = 0;
 
   function clamp(v){ return v < -1 ? -1 : (v > 1 ? 1 : v); }
 
-  /* --- mouse / trackpad ------------------------------------ */
   window.addEventListener('pointermove', function(e){
-    if (e.pointerType === 'touch') return;      // fingers handled below
+    if (e.pointerType === 'touch') return;     // fingers handled below
     aimX = clamp((e.clientX / window.innerWidth  - 0.5) * 2);
     aimY = clamp((e.clientY / window.innerHeight - 0.5) * 2);
-    M.source = 'pointer';
-    M.active = true;
+    M.source = 'pointer'; M.active = true;
   }, { passive:true });
 
-  /* --- dragging a finger ----------------------------------- *
-     A drag anywhere on the page steers the scene. This beats
-     gyro for a couple of seconds afterwards, so a deliberate
-     swipe isn't fighting the hand holding the phone.          */
+  /* A drag anywhere steers the scene, and beats gyro for a couple
+     of seconds after — so a deliberate swipe isn't fighting the
+     hand holding the phone. */
   function fromTouch(e){
     var t = e.touches && e.touches[0];
     if (!t) return;
     aimX = clamp((t.clientX / window.innerWidth  - 0.5) * 2);
     aimY = clamp((t.clientY / window.innerHeight - 0.5) * 2);
     lastTouch = Date.now();
-    M.source = 'touch';
-    M.active = true;
+    M.source = 'touch'; M.active = true;
   }
   window.addEventListener('touchstart', fromTouch, { passive:true });
   window.addEventListener('touchmove',  fromTouch, { passive:true });
 
-  /* --- the phone's own tilt -------------------------------- */
   function onOrient(e){
     if (e.gamma === null || e.beta === null) return;
-    if (Date.now() - lastTouch < 2200) return;  // a recent drag wins
+    if (Date.now() - lastTouch < 2200) return;   // a recent drag wins
 
-    // gamma: left/right roll. beta: front/back pitch, 45deg is
+    // gamma: left/right roll. beta: front/back pitch, where 45deg is
     // roughly how people hold a phone while reading.
     aimX = clamp(e.gamma / 32);
     aimY = clamp((e.beta - 45) / 32);
-    M.source = 'gyro';
-    M.active = true;
+    M.source = 'gyro'; M.active = true;
   }
 
   function listenGyro(){
@@ -75,10 +64,10 @@
 
   if (GYRO && window.DeviceOrientationEvent){
     if (typeof DeviceOrientationEvent.requestPermission === 'function'){
-      // iOS 13+ — needs a real tap before it will hand over the sensor
+      // iOS 13+ needs a real tap before it hands over the sensor
       var ask = function(){
         DeviceOrientationEvent.requestPermission()
-          .then(function(state){ if (state === 'granted') listenGyro(); })
+          .then(function(s){ if (s === 'granted') listenGyro(); })
           .catch(function(){});
         window.removeEventListener('touchend', ask);
         window.removeEventListener('click', ask);
@@ -90,9 +79,8 @@
     }
   }
 
-  /* --- smooth it out --------------------------------------- *
-     Raw input is jittery, especially from a gyroscope. Easing
-     toward the target every frame turns it into drift.        */
+  /* Raw input is jittery, especially a gyroscope. Easing toward
+     the target every frame turns it into drift. */
   var running = true;
   document.addEventListener('visibilitychange', function(){
     running = !document.hidden;
