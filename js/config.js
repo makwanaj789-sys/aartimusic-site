@@ -52,14 +52,15 @@ window.AARTI = {
                 keeps the light.
      Both are optional: empty the path and the block disappears.
 
-     onMobile:false keeps the page-wide overlay off phones. It is the
-     single heaviest thing here and most visitors arrive on mobile
-     data, so it is opt-in rather than on by default.               */
+     onMobile decides whether the page-wide overlay loads on phones.
+     It is the heaviest asset here, and most visitors arrive on
+     mobile data — but at 3.5 MB it is affordable, so it is on.
+     Set it to false to save that for phone visitors.               */
   video: {
     showcase: 'assets/showcase.mp4',
     overlay:  'assets/overlay.mp4',
     overlayOpacity: 0.30,
-    onMobile: false
+    onMobile: true
   },
 
   /* --- the WebGL scene ---
@@ -75,6 +76,11 @@ window.AARTI = {
     bars:   70,          // bars in the middle ring; the others scale off it
     radius: 6.0,
     embers: 110,         // rising sparks; 0 removes them
-    grid:   true         // the wireframe floor. false leaves the rings floating
+    grid:   true,        // the wireframe floor. false leaves the rings floating
+
+    /* What is left of the scene once the hero has scrolled away.
+       Behind a wordmark it is atmosphere; behind a paragraph it
+       is noise. 0 removes it entirely past the hero.            */
+    restOpacity: 0.16
   }
 };
