@@ -87,6 +87,7 @@ body:not(.ready) .hero-copy{ opacity:0; }
 #scene{
   position:fixed; inset:0; width:100%; height:100%;
   z-index:0; pointer-events:none;
+  transition:opacity .25s linear;   /* scene.js drives the value */
 }
 
 /* Vertical rules running the height of the page. Almost
