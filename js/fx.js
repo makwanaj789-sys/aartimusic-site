@@ -195,7 +195,71 @@
     update();
   })();
 
-  /* ---------- 7. parallax ------------------------------------
+  /* ---------- 7. video -------------------------------------
+     Both clips are held back until they are needed.
+
+     The showcase only starts downloading when it scrolls into
+     view, and pauses again when it leaves — a video playing
+     off-screen costs battery and data for nothing.
+
+     The page overlay is heavier still, so it is off on phones by
+     default. Most visitors here arrive on mobile data, and a
+     background flourish is not worth ten megabytes of it.      */
+  (function video(){
+    var cfg = (window.AARTI && window.AARTI.video) || {};
+
+    /* --- showcase --- */
+    var show = document.getElementById('showcaseVid');
+    if (show){
+      if (!cfg.showcase){
+        var frame = show.closest('.show-frame');
+        if (frame) frame.remove();
+      } else if ('IntersectionObserver' in window){
+        var loaded = false;
+        new IntersectionObserver(function(entries){
+          entries.forEach(function(en){
+            if (en.isIntersecting){
+              if (!loaded){ show.src = cfg.showcase; loaded = true; }
+              var p = show.play();
+              if (p && p.catch) p.catch(function(){});
+            } else if (loaded){
+              show.pause();
+            }
+          });
+        }, { threshold: 0.25 }).observe(show);
+      } else {
+        show.src = cfg.showcase;
+      }
+    }
+
+    /* --- page overlay --- */
+    var ov = document.getElementById('overlayVid');
+    if (!ov) return;
+
+    var wanted = cfg.overlay && !reduced &&
+                 (cfg.onMobile !== false || window.innerWidth >= 900);
+
+    if (!wanted){ ov.remove(); return; }
+
+    ov.style.setProperty('--ov-op', String(cfg.overlayOpacity || 0.30));
+    ov.src = cfg.overlay;
+
+    ov.addEventListener('loadeddata', function(){
+      ov.classList.add('on');                 // fade in once it can actually play
+      var p = ov.play();
+      if (p && p.catch) p.catch(function(){});
+    });
+
+    // a decode failure should cost the flourish, not leave a black sheet
+    ov.addEventListener('error', function(){ ov.remove(); });
+
+    document.addEventListener('visibilitychange', function(){
+      if (document.hidden) ov.pause();
+      else { var p = ov.play(); if (p && p.catch) p.catch(function(){}); }
+    });
+  })();
+
+  /* ---------- 8. parallax ------------------------------------
      Elements drift at their own rate as the page moves. Only what
      is on screen gets touched.                                  */
   (function parallax(){
