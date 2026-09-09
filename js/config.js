@@ -12,6 +12,7 @@ window.AARTI = {
   ownerHandle:    'umclon',
   updatesChannel: 'clon_ch1t',
   supportGroup:   '',            // e.g. 'aartimusic_support'
+  instagram:      'h81t6',       // handle only, no @
   email:          '',            // e.g. 'hello@aartimusic.com'
 
   /* --- hero artwork ---
@@ -41,6 +42,24 @@ window.AARTI = {
     maxAngle: 8,    // degrees of lean; 4-6 is subtle, 12+ is loud
     lift:     14,   // px the card rises toward the viewer
     shine:    30    // % accent colour in the moving highlight
+  },
+
+  /* --- video ---
+     showcase   plays in its own section, only once it scrolls into
+                view. Nothing downloads until then.
+     overlay    a looping clip screened over the whole page. It needs a
+                black background — screen blend makes black vanish and
+                keeps the light.
+     Both are optional: empty the path and the block disappears.
+
+     onMobile:false keeps the page-wide overlay off phones. It is the
+     single heaviest thing here and most visitors arrive on mobile
+     data, so it is opt-in rather than on by default.               */
+  video: {
+    showcase: 'assets/showcase.mp4',
+    overlay:  'assets/overlay.mp4',
+    overlayOpacity: 0.30,
+    onMobile: false
   },
 
   /* --- the WebGL scene ---
