@@ -67,7 +67,7 @@ setTimeout(function(){
     <ul class="menu">
       <li><a href="#live">Live</a></li>
       <li><a href="#features">Features</a></li>
-      <li><a href="#showcase">Look</a></li>
+      <li><a href="#effects">Effects</a></li>
       <li><a href="#commands">Commands</a></li>
       <li><a href="#contact">Contact</a></li>
     </ul>
@@ -209,25 +209,51 @@ setTimeout(function(){
     </div>
   </section>
 
-  <!-- ============ SHOWCASE ============ -->
-  <section class="showcase" id="showcase">
-    <div class="wrap">
-      <div class="sec-head">
-        <div>
-          <div class="idx">03 — Motion</div>
-          <h2 data-scramble>THE LOOK</h2>
-        </div>
-        <p>Covers, edits and channel work — made in-house.</p>
+  <!-- ============ EFFECTS ============ -->
+  <section class="section wrap" id="effects">
+    <div class="sec-head">
+      <div>
+        <div class="idx">03 — Effects</div>
+        <h2 data-scramble>SEVEN WAYS</h2>
       </div>
+      <p>Tap <b>EFFECT</b> under any track. The first person to render one pays for it; everyone after gets it instantly.</p>
     </div>
 
-    <!-- Nothing downloads until this scrolls into view. -->
-    <div class="show-frame" data-reveal>
+    <!-- The clip plays behind the list. Nothing downloads until
+         this scrolls into view. -->
+    <div class="fx-stage" data-reveal>
       <video id="showcaseVid" muted loop playsinline preload="none"></video>
-      <div class="show-scrim"></div>
+      <div class="fx-scrim"></div>
+
+      <ol class="fx-list">
+        <li><span class="n">01</span><span class="t">Slowed</span><span class="d">Dropped in speed and pitch</span></li>
+        <li><span class="n">02</span><span class="t">Reverb</span><span class="d">Room around the vocals</span></li>
+        <li><span class="n">03</span><span class="t">Slowed + Reverb</span><span class="d">The pair everyone asks for</span></li>
+        <li><span class="n">04</span><span class="t">8D Audio</span><span class="d">Moves around you — use headphones</span></li>
+        <li><span class="n">05</span><span class="t">Concert Hall</span><span class="d">Long tail, like a live room</span></li>
+        <li><span class="n">06</span><span class="t">Bass Boosted</span><span class="d">Heavier low end</span></li>
+        <li><span class="n">07</span><span class="t">Nightcore</span><span class="d">Faster and higher</span></li>
+      </ol>
+
       <div class="show-tag">
         <span class="role">Motion / Edit</span>
         <span class="by">by @umclon</span>
+      </div>
+    </div>
+
+    <!-- and the edit side of it -->
+    <div class="edit-row">
+      <div class="edit-card" data-tilt data-reveal>
+        <span class="role">Cover</span>
+        <p>Send any photo and it becomes the artwork — inside the file, not just the thumbnail.</p>
+      </div>
+      <div class="edit-card" data-tilt data-reveal>
+        <span class="role">Title</span>
+        <p>Rename a track to whatever you like. Yours changes, nobody else's does.</p>
+      </div>
+      <div class="edit-card" data-tilt data-reveal>
+        <span class="role">Artist</span>
+        <p>Put your own name on it. Effects and edits stack on the same copy.</p>
       </div>
     </div>
   </section>
