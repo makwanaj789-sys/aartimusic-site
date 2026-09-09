@@ -248,6 +248,9 @@ body:not(.ready) .hero-copy{ opacity:0; }
   transform:translateY(110%);
   animation:drop .95s var(--ease-out) forwards;
 }
+/* The letters wait for the loader, but only briefly — the failsafe in
+   index.html adds .ready after three seconds regardless, so this can
+   never leave the wordmark stuck off screen. */
 body:not(.ready) .wordmark .ch{ animation-play-state:paused; }
 @keyframes drop{ to{ transform:translateY(0); } }
 
