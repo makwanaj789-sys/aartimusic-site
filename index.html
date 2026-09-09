@@ -49,6 +49,11 @@ setTimeout(function(){
 <!-- the WebGL scene sits behind everything -->
 <canvas id="scene"></canvas>
 
+<!-- Looping overlay, screened over the page. Black in the clip
+     disappears under the blend, so only the light shows through.
+     js/fx.js decides whether to load it at all. -->
+<video id="overlayVid" class="overlay-vid" muted loop playsinline preload="none" aria-hidden="true"></video>
+
 <!-- faint vertical rules, for structure -->
 <div class="rules" aria-hidden="true">
   <span></span><span></span><span></span><span></span>
@@ -62,6 +67,7 @@ setTimeout(function(){
     <ul class="menu">
       <li><a href="#live">Live</a></li>
       <li><a href="#features">Features</a></li>
+      <li><a href="#showcase">Look</a></li>
       <li><a href="#commands">Commands</a></li>
       <li><a href="#contact">Contact</a></li>
     </ul>
@@ -203,11 +209,34 @@ setTimeout(function(){
     </div>
   </section>
 
+  <!-- ============ SHOWCASE ============ -->
+  <section class="showcase" id="showcase">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <div class="idx">03 — Motion</div>
+          <h2 data-scramble>THE LOOK</h2>
+        </div>
+        <p>Covers, edits and channel work — made in-house.</p>
+      </div>
+    </div>
+
+    <!-- Nothing downloads until this scrolls into view. -->
+    <div class="show-frame" data-reveal>
+      <video id="showcaseVid" muted loop playsinline preload="none"></video>
+      <div class="show-scrim"></div>
+      <div class="show-tag">
+        <span class="role">Motion / Edit</span>
+        <span class="by">by @umclon</span>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ COMMANDS ============ -->
   <section class="section wrap" id="commands">
     <div class="sec-head">
       <div>
-        <div class="idx">03 — Reference</div>
+        <div class="idx">04 — Reference</div>
         <h2 data-scramble>COMMANDS</h2>
       </div>
       <p>In a DM you can skip the command and just send a song name.</p>
@@ -229,7 +258,7 @@ setTimeout(function(){
   <section class="section wrap" id="contact">
     <div class="sec-head">
       <div>
-        <div class="idx">04 — Get in touch</div>
+        <div class="idx">05 — Get in touch</div>
         <h2 data-scramble>CONTACT</h2>
       </div>
       <p>Bug, request, or just want to say hello — all of these reach me.</p>
@@ -253,6 +282,12 @@ setTimeout(function(){
         <span class="role">Support group</span>
         <span class="name" data-handle="support">Support</span>
         <span class="desc">Ask a question where other users can help too.</span>
+      </a>
+
+      <a class="card" data-tilt data-reveal data-link="instagram" href="#">
+        <span class="role">Instagram</span>
+        <span class="name" data-handle="instagram">@h81t6</span>
+        <span class="desc">Edits, covers and everything visual.</span>
       </a>
 
       <a class="card" data-tilt data-reveal data-link="email" href="#">
