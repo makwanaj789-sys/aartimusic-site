@@ -212,8 +212,9 @@
     var show = document.getElementById('showcaseVid');
     if (show){
       if (!cfg.showcase){
-        var frame = show.closest('.show-frame');
-        if (frame) frame.remove();
+        var stage = show.closest('.fx-stage');
+        if (stage) stage.classList.add('no-video');
+        show.remove();
       } else if ('IntersectionObserver' in window){
         var loaded = false;
         new IntersectionObserver(function(entries){
