@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Aarti Music — music for every Telegram chat</title>
-<meta name="description" content="Search, stream and save any song without leaving Telegram. Works inline in any chat, plays live in group voice chats.">
+<meta name="description" content="Search, stream and save any song without leaving Telegram. Effects, edits, inline search, and live voice chat playback.">
+<meta name="theme-color" content="#0A0908">
 
 <meta property="og:title" content="Aarti Music">
 <meta property="og:description" content="Search, stream and save any song without leaving Telegram.">
@@ -19,12 +20,31 @@
 </head>
 <body>
 
+<!-- ============ LOADER ============ -->
+<div id="loader">
+  <div class="load-in">
+    <div class="load-num">000</div>
+    <div class="load-lbl">Aarti Music</div>
+    <div class="load-bar"><span></span></div>
+  </div>
+</div>
+
+<div id="progress"></div>
+
+<!-- the WebGL scene sits behind everything -->
+<canvas id="scene"></canvas>
+
+<!-- faint vertical rules, for structure -->
+<div class="rules" aria-hidden="true">
+  <span></span><span></span><span></span><span></span>
+</div>
+
 <!-- ============ NAV ============ -->
 <nav class="nav">
   <div class="wrap nav-in">
     <a class="brand" href="#top"><span class="spark"></span> Aarti&nbsp;Music</a>
 
-    <ul class="menu" style="list-style:none;margin:0;padding:0;">
+    <ul class="menu">
       <li><a href="#live">Live</a></li>
       <li><a href="#features">Features</a></li>
       <li><a href="#commands">Commands</a></li>
@@ -41,35 +61,58 @@
 
 <!-- ============ HERO ============ -->
 <header class="hero" id="top">
+  <img id="heroImg" class="hero-pfp" alt="" hidden>
 
-  <div class="hero-art">
-    <canvas id="ring"></canvas>
-    <img id="heroImg" class="hero-pfp" alt="Aarti Music" hidden>
-  </div>
-
-  <div class="wrap hero-in">
+  <div class="hero-copy">
     <p class="eyebrow">Telegram music bot</p>
+
     <h1 class="wordmark">
-      <span class="a">AARTI</span>
-      <span class="b">MUSIC</span>
+      <span class="row a"
+        ><span class="ch" style="animation-delay:.05s">A</span
+        ><span class="ch" style="animation-delay:.10s">A</span
+        ><span class="ch" style="animation-delay:.15s">R</span
+        ><span class="ch" style="animation-delay:.20s">T</span
+        ><span class="ch" style="animation-delay:.25s">I</span
+      ></span>
+      <span class="row b"
+        ><span class="ch" style="animation-delay:.30s">M</span
+        ><span class="ch" style="animation-delay:.35s">U</span
+        ><span class="ch" style="animation-delay:.40s">S</span
+        ><span class="ch" style="animation-delay:.45s">I</span
+        ><span class="ch" style="animation-delay:.50s">C</span
+      ></span>
     </h1>
+
     <p class="pitch">
-      Search any song, send it to any chat, or stream it live into a group voice call.
-      No app to install — it already lives inside Telegram.
+      Search any song, send it to any chat, or stream it live into a group
+      voice call. No app to install — it already lives inside Telegram.
     </p>
+
     <div class="cta-row">
-      <a class="btn btn-primary" data-link="addGroup" href="#">Add to your group</a>
-      <a class="btn btn-ghost" data-link="bot" href="#">Open in Telegram</a>
+      <a class="btn btn-primary" data-magnet data-link="addGroup" href="#"><span>Add to your group</span></a>
+      <a class="btn btn-ghost" data-magnet data-link="bot" href="#"><span>Open in Telegram</span></a>
     </div>
   </div>
+
+  <div class="scroll-hint"><i></i> Scroll</div>
 </header>
 
 <main>
 
+  <!-- ============ MARQUEE ============ -->
+  <div class="marquee" data-marquee>
+    <div class="mq-track">
+      <span>Slowed <b>+</b> Reverb</span><span>8D Audio</span><span>Bass Boosted</span><span>Nightcore</span><span>Concert Hall</span><span>Voice Search</span><span>Inline Anywhere</span>
+    </div>
+  </div>
+
   <!-- ============ LIVE ============ -->
   <section class="section wrap" id="live">
     <div class="sec-head">
-      <h2>Right now</h2>
+      <div>
+        <div class="idx">01 — Right now</div>
+        <h2 data-scramble>NUMBERS</h2>
+      </div>
       <span class="pulse"><span class="dot"></span> Counted daily</span>
     </div>
 
@@ -84,11 +127,18 @@
 
   <!-- ============ FEATURES ============ -->
   <section class="section wrap" id="features">
-    <div class="sec-head"><h2>What it does</h2></div>
+    <div class="sec-head">
+      <div>
+        <div class="idx">02 — What it does</div>
+        <h2 data-scramble>FEATURES</h2>
+      </div>
+      <p>Everything runs inside Telegram. Nothing to install, nothing to sign up for.</p>
+    </div>
+
     <div class="feat-list">
 
       <div class="feat" data-reveal>
-        <div class="k">INLINE</div>
+        <div class="k">01</div>
         <div>
           <h3>Works in chats it isn't even in</h3>
           <p>Type <code>@AartiMusic_bot</code> plus a song name in any conversation. Results appear as you type, and the track sends straight into the chat.</p>
@@ -96,42 +146,42 @@
       </div>
 
       <div class="feat" data-reveal>
-        <div class="k">VOICE</div>
+        <div class="k">02</div>
+        <div>
+          <h3>Seven effects, one tap</h3>
+          <p>Slowed, reverb, slowed + reverb, 8D, concert hall, bass boost, nightcore. Pick a default in settings and every track arrives that way.</p>
+        </div>
+      </div>
+
+      <div class="feat" data-reveal>
+        <div class="k">03</div>
+        <div>
+          <h3>Make any track your own</h3>
+          <p>Change the cover, the title, the artist. Effects and edits stack, and your copy stays yours — the original is untouched for everyone else.</p>
+        </div>
+      </div>
+
+      <div class="feat" data-reveal>
+        <div class="k">04</div>
         <div>
           <h3>Say the song instead of typing it</h3>
-          <p>Send a voice note in a DM — or reply <code>/vs</code> to one in a group. Speech gets transcribed, cleaned up, and searched. Hinglish and half-remembered titles are fine.</p>
+          <p>Send a voice note, or reply <code>/vs</code> to one in a group. Speech gets transcribed, cleaned up, and searched. Hinglish and half-remembered titles are fine.</p>
         </div>
       </div>
 
       <div class="feat" data-reveal>
-        <div class="k">CALLS</div>
+        <div class="k">05</div>
         <div>
           <h3>Plays into group voice chats</h3>
-          <p><code>/vplay</code> starts a track in the call. Queue up more, skip, pause, and let it roll — the next song downloads in the background before the current one ends.</p>
+          <p><code>/vplay</code> starts a track in the call. Queue more, skip, pause — the next song downloads in the background before the current one ends.</p>
         </div>
       </div>
 
       <div class="feat" data-reveal>
-        <div class="k">VAULT</div>
-        <div>
-          <h3>Keeps the ones you liked</h3>
-          <p>Tap the heart under any track to save it. <code>/myfavorites</code> brings the collection back, and <code>/favshuffle</code> plays the whole thing on shuffle.</p>
-        </div>
-      </div>
-
-      <div class="feat" data-reveal>
-        <div class="k">SPEED</div>
+        <div class="k">06</div>
         <div>
           <h3>Popular tracks arrive instantly</h3>
-          <p>Anything downloaded once is stored and served from Telegram's own servers. Common songs skip the download entirely and send in about a second.</p>
-        </div>
-      </div>
-
-      <div class="feat" data-reveal>
-        <div class="k">TASTE</div>
-        <div>
-          <h3>Suggests where to go next</h3>
-          <p>The suggest button reads the track you're on and what you've saved, then offers four songs that fit the same mood, language and era.</p>
+          <p>Anything downloaded once is served from Telegram's own servers. Common songs skip the download entirely and send in about a second.</p>
         </div>
       </div>
 
@@ -140,7 +190,14 @@
 
   <!-- ============ COMMANDS ============ -->
   <section class="section wrap" id="commands">
-    <div class="sec-head"><h2>Commands</h2></div>
+    <div class="sec-head">
+      <div>
+        <div class="idx">03 — Reference</div>
+        <h2 data-scramble>COMMANDS</h2>
+      </div>
+      <p>In a DM you can skip the command and just send a song name.</p>
+    </div>
+
     <div class="cmd-grid">
       <div class="cmd" data-tilt data-reveal><code>/am &lt;song&gt;</code><span>Search and download in a group</span></div>
       <div class="cmd" data-tilt data-reveal><code>/vs</code><span>Reply to a voice note to search it</span></div>
@@ -156,7 +213,10 @@
   <!-- ============ CONTACT ============ -->
   <section class="section wrap" id="contact">
     <div class="sec-head">
-      <h2>Get in touch</h2>
+      <div>
+        <div class="idx">04 — Get in touch</div>
+        <h2 data-scramble>CONTACT</h2>
+      </div>
       <p>Bug, request, or just want to say hello — all of these reach me.</p>
     </div>
 
@@ -201,9 +261,10 @@
 <script src="js/config.js"></script>
 <script src="js/links.js"></script>
 <script src="js/theme.js"></script>
-<!-- motion.js must come before ring.js and tilt.js — both read from it -->
+<!-- motion.js must come before scene.js and tilt.js — both read from it -->
 <script src="js/motion.js"></script>
-<script src="js/ring.js"></script>
+<script src="js/scene.js"></script>
+<script src="js/fx.js"></script>
 <script src="js/reveal.js"></script>
 <script src="js/tilt.js"></script>
 <script src="js/stats.js"></script>
