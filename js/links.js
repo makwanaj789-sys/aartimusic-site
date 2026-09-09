@@ -13,6 +13,7 @@
     owner:    c.ownerHandle    ? 'https://t.me/' + c.ownerHandle : '',
     updates:  c.updatesChannel ? 'https://t.me/' + c.updatesChannel : '',
     support:  c.supportGroup   ? 'https://t.me/' + c.supportGroup : '',
+    instagram: c.instagram     ? 'https://instagram.com/' + c.instagram : '',
     email:    c.email          ? 'mailto:' + c.email : ''
   };
 
@@ -37,6 +38,7 @@
     owner:   c.ownerHandle    ? '@' + c.ownerHandle    : '',
     updates: c.updatesChannel ? '@' + c.updatesChannel : '',
     support: c.supportGroup   ? '@' + c.supportGroup   : '',
+    instagram: c.instagram    ? '@' + c.instagram    : '',
     email:   c.email || ''
   };
   document.querySelectorAll('[data-handle]').forEach(function(el){
