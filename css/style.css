@@ -363,33 +363,75 @@ body:not(.ready) .wordmark .ch{ animation-play-state:paused; }
 [data-theme="day"] .overlay-vid.on{ opacity:calc(var(--ov-op, .30) * .45); }
 
 /* ============================================================
-   SHOWCASE
+   EFFECTS STAGE
+   The clip plays behind the list rather than beside it, so the
+   video is doing a job — showing what these tracks look like —
+   instead of sitting there as decoration.
    ============================================================ */
-.showcase{ padding-block:clamp(80px,12vw,150px); position:relative; z-index:2; }
-
-.show-frame{
-  position:relative;
-  margin-top:8px;
-  aspect-ratio:16/9;
-  overflow:hidden;
-  border-block:1px solid var(--line);
-  background:#000;
+.fx-stage{
+  position:relative; overflow:hidden;
+  border:1px solid var(--line);
+  background:#070605;
+  padding:clamp(28px,5vw,60px) clamp(20px,4vw,52px) clamp(60px,7vw,80px);
 }
-.show-frame video{
-  width:100%; height:100%; object-fit:cover; display:block;
-  transform:scale(1.02);                 /* hides any edge seam */
+.fx-stage video{
+  position:absolute; inset:0;
+  width:100%; height:100%; object-fit:cover;
+  opacity:.55; transform:scale(1.03);
 }
 
-/* Vignette, so the caption stays readable over a bright frame */
-.show-scrim{
+/* Without this the list is unreadable over a moving picture. */
+.fx-scrim{
   position:absolute; inset:0; pointer-events:none;
   background:
-    linear-gradient(to top, color-mix(in srgb, var(--bg) 88%, transparent) 0%, transparent 42%),
-    radial-gradient(120% 80% at 50% 50%, transparent 40%, color-mix(in srgb, var(--bg) 55%, transparent) 100%);
+    linear-gradient(90deg, rgba(7,6,5,.94) 0%, rgba(7,6,5,.72) 45%, rgba(7,6,5,.35) 100%),
+    linear-gradient(to top, rgba(7,6,5,.9) 0%, transparent 45%);
 }
+[data-theme="day"] .fx-scrim{
+  background:
+    linear-gradient(90deg, rgba(244,239,233,.94) 0%, rgba(244,239,233,.74) 45%, rgba(244,239,233,.4) 100%),
+    linear-gradient(to top, rgba(244,239,233,.92) 0%, transparent 45%);
+}
+[data-theme="day"] .fx-stage{ background:#F4EFE9; }
+[data-theme="day"] .fx-stage video{ opacity:.4; }
+
+/* no clip configured — the stage still works, just plain */
+.fx-stage.no-video .fx-scrim{ display:none; }
+
+.fx-list{
+  position:relative; z-index:1;
+  list-style:none; margin:0; padding:0;
+  max-width:640px;
+}
+.fx-list li{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  gap:6px clamp(14px,3vw,26px);
+  padding:14px 0;
+  border-bottom:1px solid color-mix(in srgb, var(--line-lit) 60%, transparent);
+  align-items:baseline;
+  transition:padding-left .4s var(--ease-out);
+}
+.fx-list li:last-child{ border-bottom:0; }
+.fx-list li:hover{ padding-left:10px; }
+.fx-list .n{
+  grid-row:span 2;
+  font-family:var(--font-data); font-size:10.5px;
+  letter-spacing:.16em; color:var(--flame); padding-top:5px;
+}
+.fx-list .t{
+  font-family:var(--font-display); font-weight:700;
+  font-size:clamp(17px,2.6vw,25px); letter-spacing:-.02em;
+  color:var(--ink);
+}
+.fx-list .d{
+  grid-column:2;
+  font-size:12.5px; color:var(--mist);
+}
+
 .show-tag{
-  position:absolute; left:0; right:0; bottom:0;
-  padding:clamp(16px,3vw,32px) var(--gutter);
+  position:absolute; left:0; right:0; bottom:0; z-index:1;
+  padding:clamp(14px,3vw,26px) clamp(20px,4vw,52px);
   display:flex; justify-content:space-between; align-items:flex-end;
   gap:16px; flex-wrap:wrap;
   font-family:var(--font-data);
@@ -403,9 +445,23 @@ body:not(.ready) .wordmark .ch{ animation-play-state:paused; }
   color:var(--mist);
 }
 
-@media (max-width:760px){
-  .show-frame{ aspect-ratio:4/3; }
+/* ---------- the edit half ---------- */
+.edit-row{
+  perspective:1200px;
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  gap:1px; background:var(--line);
+  border:1px solid var(--line); border-top:0;
 }
+.edit-card{
+  background:var(--bg); padding:26px 24px;
+  transition:background-color .4s var(--ease);
+}
+.edit-card:hover{ background:var(--bg-2); }
+.edit-card .role{
+  font-family:var(--font-data); font-size:9.5px;
+  letter-spacing:.24em; text-transform:uppercase; color:var(--flame);
+}
+.edit-card p{ margin:10px 0 0; font-size:13px; color:var(--mist); }
 
 /* ============================================================
    SECTIONS
