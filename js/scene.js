@@ -28,6 +28,11 @@
   var EMBERS = cfg.embers === undefined ? (small ? 45 : 110) : cfg.embers;
   var GRID   = cfg.grid !== false;
 
+  // How much of the scene is left once you have scrolled past the
+  // hero. Enough to keep the page feeling alive, not enough to
+  // fight the text.
+  var REST = cfg.restOpacity === undefined ? 0.16 : cfg.restOpacity;
+
   var renderer;
   try {
     renderer = new THREE.WebGLRenderer({
@@ -177,9 +182,9 @@
       R.bars.forEach(function(b){
         var m = b.mesh.material;
         m.blending = mix;
-        m.opacity  = day ? Math.min(0.96, R.cfg.op + 0.28) : R.cfg.op;
+        m.opacity  = day ? R.cfg.op * 0.55 : R.cfg.op;
         m.color.copy(b.base);
-        if (day) m.color.lerp(cCool, 0.42);
+        if (day) m.color.lerp(cCool, 0.55);
         m.needsUpdate = true;
       });
       R.floor.blending = mix;
@@ -249,6 +254,14 @@
       // ease toward the real scroll position so the camera drifts
       // rather than snapping on every wheel notch
       scroll += (scrollAmount() - scroll) * 0.06;
+
+      /* Fade the scene out as the hero leaves.
+         It reads as atmosphere behind a wordmark, but behind a
+         paragraph it is just noise competing with the words —
+         badly so in day mode, where the bars turn solid. */
+      var vh   = window.innerHeight || 1;
+      var past = Math.min(1, window.scrollY / (vh * 0.85));
+      canvas.style.opacity = (1 - past * (1 - REST)).toFixed(3);
 
       rig.rotation.x   =  motion.y * 0.26;
       rig.rotation.z   = -motion.x * 0.12;
