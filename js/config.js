@@ -32,9 +32,18 @@ window.AARTI = {
      for a tab someone left open.                             */
   statsRefreshMinutes: 30,
 
+  /* --- motion input ---
+     One steering signal feeds both the hero ring and the card
+     tilt: a mouse, a dragging finger, or the phone's own tilt,
+     whichever the visitor is using.                            */
+  motion: {
+    ease: 0.075,   // how lazily it follows. 0.02 is syrup, 0.2 is snappy
+    gyro: true     // false switches off phone-tilt steering everywhere
+  },
+
   /* --- card tilt ---
-     Cards lean toward the pointer. Set enabled:false to switch
-     it off everywhere. Touch screens skip it automatically.    */
+     Cards lean toward the pointer on desktop, and with the
+     handset on phones. Set enabled:false to switch it off.     */
   tilt: {
     enabled:  true,
     maxAngle: 9,    // degrees of lean; 4-6 is subtle, 12+ is loud
@@ -42,14 +51,20 @@ window.AARTI = {
     shine:    34    // % accent colour in the moving highlight
   },
 
-  /* --- the 3D ring in the hero --- */
+  /* --- the 3D ring in the hero ---
+     Three nested rings of bars, embers rising through them,
+     and a halo behind.                                         */
   ring: {
     hot:    '#F7DCA8',   // top of the flame
     mid:    '#E0A253',
     cool:   '#B0553C',   // base of the flame
-    bars:   72,          // fewer = simpler, lighter
+
+    bars:   72,          // bars in the middle ring; the other two scale off it
     radius: 6.2,
     speed:  0.085,       // rotation; 0 stops it spinning
-    follow: true         // ring leans toward the pointer
+
+    depth:  1,           // how hard it leans. 0.6 is calm, 1.6 is dramatic
+    embers: 120,         // rising sparks; 0 removes them
+    halo:   true         // soft glow behind the rings
   }
 };
