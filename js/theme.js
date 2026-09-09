@@ -14,7 +14,7 @@
   function apply(mode){
     root.setAttribute('data-theme', mode);
     btn.setAttribute('aria-pressed', mode === 'day' ? 'true' : 'false');
-    if (window.__ringTheme) window.__ringTheme(mode);
+    if (window.__sceneTheme) window.__sceneTheme(mode);
   }
 
   // restore the last choice, if the browser allows storage at all
