@@ -29,6 +29,21 @@
   </div>
 </div>
 
+<script>
+/* Failsafe. The loader covers the page and the content stays hidden
+   until something adds .ready — so if fx.js fails to load, or throws,
+   the site would sit on a blank screen forever. This reveals it after
+   three seconds no matter what happened. A missing script should cost
+   an animation, never the whole page. */
+setTimeout(function(){
+  if (!document.body.classList.contains('ready')){
+    document.body.classList.add('ready');
+    var l = document.getElementById('loader');
+    if (l) l.classList.add('gone');
+  }
+}, 3000);
+</script>
+
 <div id="progress"></div>
 
 <!-- the WebGL scene sits behind everything -->
