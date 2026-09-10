@@ -18,7 +18,8 @@ window.AARTI = {
   /* --- hero artwork ---
      Small circular picture above the wordmark. Put the file in
      assets/. Leave empty ('') and it simply isn't shown.       */
-  heroImage: 'assets/pfp.png',
+  heroImage: 'assets/pfp.webp',
+  heroImageFallback: 'assets/pfp.png',
 
   /* --- live stats ---
      Where the numbers come from: a file sitting next to
@@ -53,29 +54,35 @@ window.AARTI = {
      Both are optional: empty the path and the block disappears.
 
      onMobile decides whether the page-wide overlay loads on phones.
-     It is the heaviest asset here, and most visitors arrive on
-     mobile data — but at 3.5 MB it is affordable, so it is on.
-     Set it to false to save that for phone visitors.               */
+     It is off there now, and the reason is frame cost rather than
+     the 3.5 MB: screen-blending a fullscreen video over the whole
+     document forces the browser to recomposite every layer beneath
+     it for every video frame. On a phone that alone was eating the
+     frame budget. Desktop keeps it.                                */
   video: {
     showcase: 'assets/showcase.mp4',
     overlay:  'assets/overlay.mp4',
     overlayOpacity: 0.30,
-    onMobile: true
+    onMobile: false
   },
 
   /* --- the WebGL scene ---
      Three nested rings of bars over a receding grid floor, with
      embers drifting up through them. The camera pulls back as
      the page scrolls, so the whole site sits in one space.
-     Bars and embers are cut automatically on small screens.    */
+
+     The three rings are drawn as InstancedMesh, so the bar count
+     costs almost nothing in draw calls — it is three either way.
+     Bars and embers are still cut on small screens, and scene.js
+     lowers resolution further if it measures frames running long. */
   scene: {
     hot:    '#F7DCA8',   // top of the flame
     mid:    '#E0A253',
     cool:   '#B0553C',   // base of the flame
 
-    bars:   70,          // bars in the middle ring; the others scale off it
+    bars:   64,          // bars in the middle ring; the others scale off it
     radius: 6.0,
-    embers: 110,         // rising sparks; 0 removes them
+    embers: 90,          // rising sparks; 0 removes them
     grid:   true,        // the wireframe floor. false leaves the rings floating
 
     /* What is left of the scene once the hero has scrolled away.

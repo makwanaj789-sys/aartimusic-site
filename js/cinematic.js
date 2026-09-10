@@ -18,6 +18,13 @@
   var parallaxItems = [];
   var parallaxMetrics = [];
 
+  // Queried once instead of on every scroll frame.
+  var progressBar = document.getElementById('progress');
+  var nav = document.querySelector('.nav');
+
+  // Last values actually written to the DOM, so an unchanged frame is free.
+  var lastProgress = '', lastHero = '', lastSolid = null;
+
   function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
   function smooth(t){ return t*t*(3-2*t); }
 
@@ -44,8 +51,9 @@
     state.progress = clamp(y / max, 0, 1);
     state.hero = smooth(clamp(y / (vh * 1.05), 0, 1));
 
-    root.style.setProperty('--page-progress', state.progress.toFixed(4));
-    root.style.setProperty('--hero-progress', state.hero.toFixed(4));
+    var pg = state.progress.toFixed(4), hp = state.hero.toFixed(4);
+    if (pg !== lastProgress){ lastProgress = pg; root.style.setProperty('--page-progress', pg); }
+    if (hp !== lastHero){ lastHero = hp; root.style.setProperty('--hero-progress', hp); }
 
     if (!reduced){
       sectionMetrics.forEach(function(m){
@@ -56,22 +64,35 @@
         var enter = smooth(clamp((vh - top) / (vh * 0.75), 0, 1));
         var leave = smooth(clamp(bottom / (vh * 0.75), 0, 1));
         var focus = local * 0.72 + enter * leave * 0.28;
-        m.section.style.setProperty('--focus', focus.toFixed(3));
-        m.section.style.setProperty('--depth', ((m.index + 1) * 0.08 + (1-focus) * 0.35).toFixed(3));
-        m.section.classList.toggle('is-focus', focus > 0.52);
+
+        // Writing a custom property invalidates style for the whole
+        // subtree, identical value or not. At five sections a frame
+        // that was most of the scroll cost, so only changes go out.
+        var f = focus.toFixed(3);
+        if (f !== m.lastFocus){
+          m.lastFocus = f;
+          m.section.style.setProperty('--focus', f);
+          m.section.style.setProperty('--depth', ((m.index + 1) * 0.08 + (1-focus) * 0.35).toFixed(3));
+          var on = focus > 0.52;
+          if (on !== m.lastOn){
+            m.lastOn = on;
+            m.section.classList.toggle('is-focus', on);
+          }
+        }
       });
 
       var mid = vh * 0.5;
       parallaxMetrics.forEach(function(m){
-        var off = ((m.top - y) - mid) * m.speed;
-        m.el.style.setProperty('--parallax-y', off.toFixed(1) + 'px');
+        var off = (((m.top - y) - mid) * m.speed).toFixed(1) + 'px';
+        if (off === m.last) return;
+        m.last = off;
+        m.el.style.setProperty('--parallax-y', off);
       });
     }
 
-    var progressBar = document.getElementById('progress');
-    var nav = document.querySelector('.nav');
-    if (progressBar) progressBar.style.transform = 'scaleX(' + state.progress.toFixed(4) + ')';
-    if (nav) nav.classList.toggle('solid', y > 40);
+    if (progressBar) progressBar.style.transform = 'scaleX(' + pg + ')';
+    var solid = y > 40;
+    if (nav && solid !== lastSolid){ lastSolid = solid; nav.classList.toggle('solid', solid); }
 
     heroFrame();
   }

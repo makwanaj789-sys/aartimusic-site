@@ -15,6 +15,15 @@
   var LIFT  = cfg.lift     === undefined ? 16 : cfg.lift;       // px toward viewer
   var SHINE = cfg.shine    === undefined ? 34 : cfg.shine;      // % accent in the glare
 
+  // One scroll listener for the whole page. There is a card-shaped
+  // temptation to register this inside the loop, which is where it
+  // used to be — twenty listeners doing the same one-line job on
+  // every scroll event.
+  var cards = [];
+  window.addEventListener('scroll', function(){
+    for (var i = 0; i < cards.length; i++) cards[i].clear();
+  }, { passive:true });
+
   document.querySelectorAll('[data-tilt]').forEach(function(el){
 
     // the glare, and a separate layer for the drop shadow
@@ -69,6 +78,6 @@
     });
 
     // a scroll mid-hover invalidates the cached rectangle
-    window.addEventListener('scroll', function(){ rect = null; }, { passive:true });
+    cards.push({ clear: function(){ rect = null; } });
   });
 })();
