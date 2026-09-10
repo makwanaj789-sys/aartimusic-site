@@ -565,3 +565,350 @@ footer a:hover{color:var(--ink)}
   .fx-text-in{animation:none}
   #scene{opacity:.55!important}
 }
+
+/* ============================================================
+   SCROLL GALLERY
+   The section is tall; its contents are sticky. Scrolling the
+   tall part moves the cards through a perspective rail, so the
+   page travels past them instead of listing them.
+   ============================================================ */
+.gallery-section{
+  position:relative;z-index:6;
+  height:520vh;                 /* the scroll distance the rail uses */
+}
+.gallery-sticky{
+  position:sticky;top:0;
+  height:100svh;
+  display:flex;flex-direction:column;justify-content:center;
+  overflow:hidden;
+}
+@supports not (height:100svh){ .gallery-sticky{height:100vh} }
+
+.gallery-head{
+  display:grid;grid-template-columns:1fr minmax(240px,400px);
+  gap:44px;align-items:end;
+  padding-top:clamp(90px,12vh,150px);
+}
+.gallery-head p{color:var(--mist);font-size:13px;line-height:1.8;margin:0}
+.g-h2{font:800 clamp(38px,6.4vw,88px)/.86 var(--font-display);letter-spacing:-.05em;margin:0}
+
+/* The rail itself. perspective lives here, on the parent of the
+   things being turned — never on body, which would make it the
+   containing block for the fixed WebGL canvas. */
+.gallery-rail{
+  position:relative;flex:1;
+  perspective:1500px;
+  perspective-origin:50% 50%;
+  transform-style:preserve-3d;
+}
+.g-card{
+  position:absolute;left:50%;top:50%;
+  width:min(400px,74vw);height:min(500px,54vh);
+  margin:calc(min(500px,54vh) / -2) 0 0 calc(min(400px,74vw) / -2);
+  border-radius:20px;
+  cursor:pointer;
+  /* transform and opacity are written by gallery.js every frame.
+     will-change is applied by the script only to the cards that are
+     actually on screen — parked on all seven it just holds seven
+     GPU layers open for a rail that shows three. */
+  transition:box-shadow .4s var(--ease),border-color .4s;
+  border:1px solid var(--line-lit);
+  overflow:hidden;
+  background:var(--bg-2);
+}
+/* Each card takes two of the four lights, so the rail runs through
+   the whole spectrum as it travels. */
+.g-card[data-tone="a"]{--t1:var(--violet); --t2:var(--magenta)}
+.g-card[data-tone="b"]{--t1:var(--magenta);--t2:var(--gold)}
+.g-card[data-tone="c"]{--t1:var(--cyan);   --t2:var(--violet)}
+.g-card[data-tone="d"]{--t1:var(--violet); --t2:var(--cyan)}
+.g-card[data-tone="e"]{--t1:var(--gold);   --t2:var(--magenta)}
+.g-card[data-tone="f"]{--t1:var(--magenta);--t2:var(--cyan)}
+.g-card[data-tone="g"]{--t1:var(--cyan);   --t2:var(--gold)}
+
+.g-card:before{
+  content:"";position:absolute;inset:0;
+  background:
+    radial-gradient(120% 90% at 18% 8%,color-mix(in srgb,var(--t1) 62%,transparent),transparent 62%),
+    radial-gradient(110% 90% at 88% 92%,color-mix(in srgb,var(--t2) 52%,transparent),transparent 60%),
+    linear-gradient(160deg,color-mix(in srgb,var(--t1) 16%,transparent),transparent 55%);
+}
+/* A fine grain over the gradient, so a flat fill reads as a
+   surface rather than as a swatch. Deliberately NOT mix-blend-mode:
+   blending seven moving cards against their backdrop measured about
+   three frames a second on a throttled phone. A plain low-opacity
+   overlay reads the same on a gradient this dark. */
+.g-card:after{
+  content:"";position:absolute;inset:0;opacity:.16;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='.5'/%3E%3C/svg%3E");
+  background-size:120px 120px;
+}
+@media (max-width:760px){ .g-card:after{display:none} }
+.g-card.is-active{
+  border-color:color-mix(in srgb,var(--t1) 60%,transparent);
+  box-shadow:0 40px 120px color-mix(in srgb,var(--t1) 26%,transparent);
+}
+.g-face{
+  position:relative;z-index:2;height:100%;
+  display:flex;flex-direction:column;justify-content:flex-end;gap:10px;
+  padding:30px;
+}
+.g-no{
+  position:absolute;top:26px;left:30px;
+  font:9px var(--font-data);letter-spacing:.22em;color:#fff;opacity:.7;
+}
+.g-title{
+  margin:0;color:#fff;
+  font:800 clamp(28px,3.4vw,46px)/.94 var(--font-display);letter-spacing:-.04em;
+  overflow-wrap:anywhere;
+  text-shadow:0 4px 30px rgba(0,0,0,.45);
+}
+.g-copy{margin:0;color:rgba(255,255,255,.82);font-size:13px;line-height:1.65;max-width:30ch}
+.g-tag{
+  margin-top:6px;font:9px var(--font-data);letter-spacing:.16em;
+  text-transform:uppercase;color:rgba(255,255,255,.6);
+}
+
+.gallery-nav{
+  display:flex;justify-content:center;gap:8px;
+  padding:0 0 18px;
+}
+.g-dot{
+  width:26px;height:3px;border-radius:2px;cursor:pointer;
+  background:var(--line-lit);transition:background .3s,transform .3s var(--ease);
+}
+.g-dot.on{background:linear-gradient(90deg,var(--violet),var(--cyan));transform:scaleX(1.35)}
+
+.gallery-hint{
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  padding-bottom:clamp(22px,4vh,44px);
+  font:9px var(--font-data);letter-spacing:.2em;text-transform:uppercase;color:var(--mist);
+}
+.gallery-hint i{width:56px;height:1px;background:var(--line-lit);position:relative;overflow:hidden}
+.gallery-hint i:after{
+  content:"";position:absolute;left:0;top:-1px;width:20px;height:3px;
+  background:linear-gradient(90deg,var(--violet),var(--cyan));
+  animation:scrollline 2.4s ease-in-out infinite;
+}
+
+@media (max-width:1100px){
+  .gallery-head{grid-template-columns:1fr;gap:16px}
+}
+@media (max-width:760px){
+  .gallery-section{height:460vh}
+  .g-card:before{
+    background:linear-gradient(150deg,
+      color-mix(in srgb,var(--t1) 58%,transparent),
+      color-mix(in srgb,var(--t2) 44%,transparent) 70%,
+      transparent);
+  }
+  .gallery-rail{perspective:1100px}
+  .g-card{width:min(300px,80vw);height:min(400px,50vh);
+    margin:calc(min(400px,50vh) / -2) 0 0 calc(min(300px,80vw) / -2)}
+  .g-title{font-size:clamp(24px,7vw,34px)}
+  .g-copy{font-size:12px}
+  .gallery-head{padding-top:104px}
+}
+
+/* Reduced motion: no pin, no travel — a plain readable stack. */
+.gallery-section.is-static{height:auto}
+.gallery-section.is-static .gallery-sticky{position:static;height:auto;overflow:visible}
+.gallery-section.is-static .gallery-rail{
+  perspective:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:12px;padding:40px 0;
+}
+.gallery-section.is-static .g-card{
+  position:relative;left:auto;top:auto;margin:0;width:auto;height:280px;
+  transform:none!important;will-change:auto;
+}
+.gallery-section.is-static .gallery-hint{display:none}
+
+/* ============================================================
+   ENTRANCES
+   Words rise out of their own overflow box; grouped cards tilt
+   up in sequence. Both are transform + opacity only.
+   ============================================================ */
+.w-mask{
+  display:inline-block;
+  overflow:hidden;
+  vertical-align:bottom;
+  /* A little headroom, or descenders and the gradient clip get
+     sliced by the mask that is meant to hide the travel. */
+  padding-bottom:.12em;
+  margin-bottom:-.12em;
+}
+.w-in{
+  display:inline-block;
+  transform:translateY(110%);
+  opacity:0;
+  transition:transform .9s var(--ease-out),opacity .7s ease;
+}
+.w-in-play .w-in{transform:translateY(0);opacity:1}
+
+/* The gradient on the second wordmark line is clipped per-letter,
+   so the mask must not also clip it. */
+.wordmark .w-mask{overflow:visible}
+
+.rise{
+  opacity:0;
+  transform:translate3d(0,34px,0) rotateX(7deg);
+  transform-origin:50% 100%;
+  transition:opacity .85s var(--ease-out),transform .85s var(--ease-out);
+}
+.rise-in{opacity:1;transform:none}
+
+/* The tilt needs a perspective on the group, and only where a
+   pointer exists — same rule as the card hover tilt. */
+@media (min-width:761px){
+  .stat-grid,.feat-list,.edit-row,.cmd-grid,.contact-grid{perspective:1200px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .w-in{transform:none;opacity:1;transition:none}
+  .rise{opacity:1;transform:none;transition:none}
+}
+
+/* ============================================================
+   BACKDROP VIDEO
+   Both clips sit under content, so both need a veil: legible text
+   over moving footage is the whole job, and neither clip was shot
+   to be read against.
+   ============================================================ */
+.rail-bg,.moment-vid{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;z-index:0;pointer-events:none;
+  opacity:0;transition:opacity 1.1s var(--ease-out);
+}
+.rail-bg.on,.moment-vid.on{opacity:.5}
+.moment-vid.on{opacity:.62}
+[data-theme="day"] .rail-bg.on,[data-theme="day"] .moment-vid.on{opacity:.22}
+
+.rail-veil{
+  position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:
+    radial-gradient(70% 55% at 50% 52%,transparent 0%,color-mix(in srgb,var(--bg) 62%,transparent) 100%),
+    linear-gradient(180deg,var(--bg) 0%,transparent 26%,transparent 74%,var(--bg) 100%);
+}
+.gallery-rail,.gallery-nav,.gallery-hint,.gallery-head{position:relative;z-index:2}
+
+/* ---------- the "ready forever" band ---------------------- */
+.moment{
+  position:relative;z-index:6;
+  min-height:min(86svh,760px);
+  display:grid;place-items:center;
+  overflow:hidden;
+  border-block:1px solid var(--line);
+}
+@supports not (min-height:86svh){ .moment{min-height:min(86vh,760px)} }
+.moment-veil{
+  position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:
+    linear-gradient(100deg,var(--bg) 4%,color-mix(in srgb,var(--bg) 72%,transparent) 44%,transparent 78%),
+    linear-gradient(180deg,var(--bg) 0%,transparent 18%,transparent 82%,var(--bg) 100%);
+}
+.moment-copy{position:relative;z-index:2;width:min(var(--max),calc(100% - var(--gutter)*2))}
+.moment-h{
+  margin:10px 0 20px;
+  font:800 clamp(40px,7.4vw,104px)/.86 var(--font-display);letter-spacing:-.05em;
+  background:linear-gradient(100deg,var(--violet),var(--magenta) 42%,var(--cyan));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.moment-copy p{
+  max-width:46ch;color:var(--mist);font-size:clamp(13px,1.1vw,15.5px);line-height:1.8;
+}
+.moment.no-vid .moment-veil{
+  background:radial-gradient(70% 60% at 78% 50%,color-mix(in srgb,var(--violet) 20%,transparent),transparent 70%);
+}
+@media (max-width:760px){
+  .moment{min-height:auto;padding-block:96px}
+  .moment-veil{background:linear-gradient(180deg,var(--bg) 0%,color-mix(in srgb,var(--bg) 62%,transparent) 40%,var(--bg) 100%)}
+}
+
+/* ============================================================
+   MOTION PRESETS
+   Timings and curves follow the skill's motion set. Implemented
+   natively rather than with GSAP: the presets describe the motion,
+   and this page is already tight on a phone — ScrollTrigger plus
+   the core is ~70KB of main-thread work for effects that CSS
+   transitions and one scroll handler already do on the compositor.
+   ============================================================ */
+
+/* Curves, named for the easings the presets call for. */
+:root{
+  --e-power1:cubic-bezier(.25,.46,.45,.94);
+  --e-power2:cubic-bezier(.22,.61,.36,1);
+  --e-expo:cubic-bezier(.16,1,.3,1);
+  --e-back:cubic-bezier(.34,1.56,.64,1);   /* back.out(1.4) */
+}
+
+/* --- Parallax Scroll (13, 14) ------------------------------
+   cinematic.js already measures every [data-parallax] element
+   under one scroll handler and writes --parallax-y. Nothing was
+   reading it, so the depth was being computed and thrown away. */
+[data-parallax]{
+  transform:translate3d(0,var(--parallax-y,0),0);
+  will-change:transform;
+}
+@media (prefers-reduced-motion:reduce){
+  [data-parallax]{transform:none;will-change:auto}
+}
+
+/* --- Stagger List, Standard (8) ----------------------------
+   back.out overshoots slightly, so cards settle instead of
+   stopping dead. */
+.rise{
+  transition:opacity .5s var(--e-power2),
+             transform .55s var(--e-back);
+}
+
+/* --- Stagger List, Complex (9) ----------------------------- */
+.w-in{transition:transform .7s var(--e-expo),opacity .5s var(--e-power1)}
+
+/* --- Hover Micro-interaction (1, 2) ------------------------
+   Press feedback: every control answers a finger or a click,
+   and :active fires on touch where :hover never does. */
+.btn,.nav-open,.g-dot,.panel-cta,.toggle,.g-card{
+  transition-property:transform,opacity,filter,background,border-color,box-shadow;
+  transition-duration:.18s;
+  transition-timing-function:var(--e-power1);
+}
+.btn:active,.nav-open:active,.panel-cta:active{transform:scale(.97)}
+.g-dot:active{transform:scaleX(1.5)}
+.toggle:active .knob{transform:scale(.9)}
+[data-theme=day] .toggle:active .knob{transform:translateX(22px) scale(.9)}
+.burger:active{transform:scale(.94)}
+
+/* --- Carousel / Auto-Rotation (17) -------------------------
+   WCAG wants moving content to be stoppable. The ticker pauses
+   on hover, on keyboard focus, and whenever the tab is hidden. */
+.marquee:hover .mq-track,
+.marquee:focus-within .mq-track,
+.marquee[data-paused="true"] .mq-track{animation-play-state:paused}
+.mq-pause{
+  position:absolute;right:10px;top:50%;transform:translateY(-50%);
+  z-index:3;width:26px;height:26px;border-radius:50%;
+  border:1px solid var(--line-lit);
+  background:color-mix(in srgb,var(--bg) 80%,transparent);
+  color:var(--mist);font:9px var(--font-data);cursor:pointer;
+  display:grid;place-items:center;
+}
+.mq-pause:hover{color:var(--ink);border-color:var(--line-lit)}
+
+/* --- Page Transition, Standard (11) ------------------------
+   yPercent on a transform, so the wipe stays on the compositor. */
+.wipe{
+  position:fixed;inset:0;z-index:180;pointer-events:none;
+  transform:translateY(100%);
+  background:linear-gradient(160deg,var(--violet),var(--magenta) 55%,var(--cyan));
+}
+.wipe.in{
+  transform:translateY(0);
+  transition:transform .42s var(--e-power2);
+}
+.wipe.out{
+  transform:translateY(-100%);
+  /* The exit resolves faster than the entrance, so arriving
+     somewhere never feels slower than leaving. */
+  transition:transform .34s var(--e-power2);
+}
+@media (prefers-reduced-motion:reduce){ .wipe{display:none} }
