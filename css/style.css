@@ -565,3 +565,205 @@ footer a:hover{color:var(--ink)}
   .fx-text-in{animation:none}
   #scene{opacity:.55!important}
 }
+
+/* ============================================================
+   SCROLL GALLERY
+   The section is tall; its contents are sticky. Scrolling the
+   tall part moves the cards through a perspective rail, so the
+   page travels past them instead of listing them.
+   ============================================================ */
+.gallery-section{
+  position:relative;z-index:6;
+  height:520vh;                 /* the scroll distance the rail uses */
+}
+.gallery-sticky{
+  position:sticky;top:0;
+  height:100svh;
+  display:flex;flex-direction:column;justify-content:center;
+  overflow:hidden;
+}
+@supports not (height:100svh){ .gallery-sticky{height:100vh} }
+
+.gallery-head{
+  display:grid;grid-template-columns:1fr minmax(240px,400px);
+  gap:44px;align-items:end;
+  padding-top:clamp(90px,12vh,150px);
+}
+.gallery-head p{color:var(--mist);font-size:13px;line-height:1.8;margin:0}
+.g-h2{font:800 clamp(38px,6.4vw,88px)/.86 var(--font-display);letter-spacing:-.05em;margin:0}
+
+/* The rail itself. perspective lives here, on the parent of the
+   things being turned — never on body, which would make it the
+   containing block for the fixed WebGL canvas. */
+.gallery-rail{
+  position:relative;flex:1;
+  perspective:1500px;
+  perspective-origin:50% 50%;
+  transform-style:preserve-3d;
+}
+.g-card{
+  position:absolute;left:50%;top:50%;
+  width:min(400px,74vw);height:min(500px,54vh);
+  margin:calc(min(500px,54vh) / -2) 0 0 calc(min(400px,74vw) / -2);
+  border-radius:20px;
+  cursor:pointer;
+  /* transform and opacity are written by gallery.js every frame.
+     will-change is applied by the script only to the cards that are
+     actually on screen — parked on all seven it just holds seven
+     GPU layers open for a rail that shows three. */
+  transition:box-shadow .4s var(--ease),border-color .4s;
+  border:1px solid var(--line-lit);
+  overflow:hidden;
+  background:var(--bg-2);
+}
+/* Each card takes two of the four lights, so the rail runs through
+   the whole spectrum as it travels. */
+.g-card[data-tone="a"]{--t1:var(--violet); --t2:var(--magenta)}
+.g-card[data-tone="b"]{--t1:var(--magenta);--t2:var(--gold)}
+.g-card[data-tone="c"]{--t1:var(--cyan);   --t2:var(--violet)}
+.g-card[data-tone="d"]{--t1:var(--violet); --t2:var(--cyan)}
+.g-card[data-tone="e"]{--t1:var(--gold);   --t2:var(--magenta)}
+.g-card[data-tone="f"]{--t1:var(--magenta);--t2:var(--cyan)}
+.g-card[data-tone="g"]{--t1:var(--cyan);   --t2:var(--gold)}
+
+.g-card:before{
+  content:"";position:absolute;inset:0;
+  background:
+    radial-gradient(120% 90% at 18% 8%,color-mix(in srgb,var(--t1) 62%,transparent),transparent 62%),
+    radial-gradient(110% 90% at 88% 92%,color-mix(in srgb,var(--t2) 52%,transparent),transparent 60%),
+    linear-gradient(160deg,color-mix(in srgb,var(--t1) 16%,transparent),transparent 55%);
+}
+/* A fine grain over the gradient, so a flat fill reads as a
+   surface rather than as a swatch. Deliberately NOT mix-blend-mode:
+   blending seven moving cards against their backdrop measured about
+   three frames a second on a throttled phone. A plain low-opacity
+   overlay reads the same on a gradient this dark. */
+.g-card:after{
+  content:"";position:absolute;inset:0;opacity:.16;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='.5'/%3E%3C/svg%3E");
+  background-size:120px 120px;
+}
+@media (max-width:760px){ .g-card:after{display:none} }
+.g-card.is-active{
+  border-color:color-mix(in srgb,var(--t1) 60%,transparent);
+  box-shadow:0 40px 120px color-mix(in srgb,var(--t1) 26%,transparent);
+}
+.g-face{
+  position:relative;z-index:2;height:100%;
+  display:flex;flex-direction:column;justify-content:flex-end;gap:10px;
+  padding:30px;
+}
+.g-no{
+  position:absolute;top:26px;left:30px;
+  font:9px var(--font-data);letter-spacing:.22em;color:#fff;opacity:.7;
+}
+.g-title{
+  margin:0;color:#fff;
+  font:800 clamp(28px,3.4vw,46px)/.94 var(--font-display);letter-spacing:-.04em;
+  overflow-wrap:anywhere;
+  text-shadow:0 4px 30px rgba(0,0,0,.45);
+}
+.g-copy{margin:0;color:rgba(255,255,255,.82);font-size:13px;line-height:1.65;max-width:30ch}
+.g-tag{
+  margin-top:6px;font:9px var(--font-data);letter-spacing:.16em;
+  text-transform:uppercase;color:rgba(255,255,255,.6);
+}
+
+.gallery-nav{
+  display:flex;justify-content:center;gap:8px;
+  padding:0 0 18px;
+}
+.g-dot{
+  width:26px;height:3px;border-radius:2px;cursor:pointer;
+  background:var(--line-lit);transition:background .3s,transform .3s var(--ease);
+}
+.g-dot.on{background:linear-gradient(90deg,var(--violet),var(--cyan));transform:scaleX(1.35)}
+
+.gallery-hint{
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  padding-bottom:clamp(22px,4vh,44px);
+  font:9px var(--font-data);letter-spacing:.2em;text-transform:uppercase;color:var(--mist);
+}
+.gallery-hint i{width:56px;height:1px;background:var(--line-lit);position:relative;overflow:hidden}
+.gallery-hint i:after{
+  content:"";position:absolute;left:0;top:-1px;width:20px;height:3px;
+  background:linear-gradient(90deg,var(--violet),var(--cyan));
+  animation:scrollline 2.4s ease-in-out infinite;
+}
+
+@media (max-width:1100px){
+  .gallery-head{grid-template-columns:1fr;gap:16px}
+}
+@media (max-width:760px){
+  .gallery-section{height:460vh}
+  .g-card:before{
+    background:linear-gradient(150deg,
+      color-mix(in srgb,var(--t1) 58%,transparent),
+      color-mix(in srgb,var(--t2) 44%,transparent) 70%,
+      transparent);
+  }
+  .gallery-rail{perspective:1100px}
+  .g-card{width:min(300px,80vw);height:min(400px,50vh);
+    margin:calc(min(400px,50vh) / -2) 0 0 calc(min(300px,80vw) / -2)}
+  .g-title{font-size:clamp(24px,7vw,34px)}
+  .g-copy{font-size:12px}
+  .gallery-head{padding-top:104px}
+}
+
+/* Reduced motion: no pin, no travel — a plain readable stack. */
+.gallery-section.is-static{height:auto}
+.gallery-section.is-static .gallery-sticky{position:static;height:auto;overflow:visible}
+.gallery-section.is-static .gallery-rail{
+  perspective:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:12px;padding:40px 0;
+}
+.gallery-section.is-static .g-card{
+  position:relative;left:auto;top:auto;margin:0;width:auto;height:280px;
+  transform:none!important;will-change:auto;
+}
+.gallery-section.is-static .gallery-hint{display:none}
+
+/* ============================================================
+   ENTRANCES
+   Words rise out of their own overflow box; grouped cards tilt
+   up in sequence. Both are transform + opacity only.
+   ============================================================ */
+.w-mask{
+  display:inline-block;
+  overflow:hidden;
+  vertical-align:bottom;
+  /* A little headroom, or descenders and the gradient clip get
+     sliced by the mask that is meant to hide the travel. */
+  padding-bottom:.12em;
+  margin-bottom:-.12em;
+}
+.w-in{
+  display:inline-block;
+  transform:translateY(110%);
+  opacity:0;
+  transition:transform .9s var(--ease-out),opacity .7s ease;
+}
+.w-in-play .w-in{transform:translateY(0);opacity:1}
+
+/* The gradient on the second wordmark line is clipped per-letter,
+   so the mask must not also clip it. */
+.wordmark .w-mask{overflow:visible}
+
+.rise{
+  opacity:0;
+  transform:translate3d(0,34px,0) rotateX(7deg);
+  transform-origin:50% 100%;
+  transition:opacity .85s var(--ease-out),transform .85s var(--ease-out);
+}
+.rise-in{opacity:1;transform:none}
+
+/* The tilt needs a perspective on the group, and only where a
+   pointer exists — same rule as the card hover tilt. */
+@media (min-width:761px){
+  .stat-grid,.feat-list,.edit-row,.cmd-grid,.contact-grid{perspective:1200px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .w-in{transform:none;opacity:1;transition:none}
+  .rise{opacity:1;transform:none;transition:none}
+}

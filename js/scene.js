@@ -313,6 +313,16 @@
     }
   }
 
+  /* ---------- reacting to the page --------------------------
+     The gallery announces which effect is in front. The cloud
+     answers with a kick that decays over about a second, so
+     moving through the rail feels connected to the scene behind
+     it rather than happening in front of a loop. */
+  var kick = 0;
+  document.documentElement.addEventListener('aarti:effect', function(){
+    kick = 1;
+  });
+
   /* ---------- render ---------------------------------------- */
   var motion = window.AARTI_MOTION || { x:0, y:0 };
   var progress = window.AARTI_SCROLL || { progress:0, hero:0 };
@@ -340,7 +350,11 @@
     var burst = smoothstep(Math.min(1, Math.max(0, (heroP - 0.05) / 0.85)));
     uniforms.uBurst.value = burst;
     uniforms.uTime.value = t;
-    uniforms.uPulse.value = reduced ? 0.4 : Math.pow(Math.sin(t * 1.15) * 0.5 + 0.5, 2.4);
+    // Decay is framerate-independent, so a 30fps phone and a
+    // 60fps desktop see the same kick over the same wall time.
+    if (kick > 0) kick = Math.max(0, kick - dt / 900);
+    var beat = Math.pow(Math.sin(t * 1.15) * 0.5 + 0.5, 2.4);
+    uniforms.uPulse.value = reduced ? 0.4 : Math.min(1.6, beat + kick * kick * 1.1);
     uniforms.uPointer.value.set(motion.x, motion.y);
 
     var vis = Math.max(REST, 1 - heroP * 0.42);

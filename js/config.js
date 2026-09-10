@@ -66,6 +66,21 @@ window.AARTI = {
     onMobile: false
   },
 
+  /* --- the effects rail ---
+     The seven effect cards travel through a perspective rail while
+     the section is pinned. It is the most expensive thing on the
+     page for a phone to composite, so:
+
+       flat: true    keep the travel, drop the 3D turn (cheapest)
+       flat: false   force the full 3D turn everywhere
+       omit it       decide per device, which is the default
+
+     enabled: false  falls back to a plain grid of the same cards. */
+  gallery: {
+    // flat: true,
+    enabled: true
+  },
+
   /* --- the nebula ---
      One cloud of particles that holds the shape of a spinning
      record through the hero, then bursts into a drifting nebula
