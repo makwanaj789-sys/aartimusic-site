@@ -21,6 +21,12 @@
 
   function split(el){
     if (el.dataset.splitDone) return;
+    /* A heading painted with background-clip:text cannot be split:
+       the clip lives on this element, and moving its text into
+       child spans leaves those children transparent with nothing
+       clipping them. Such headings opt out and reveal as one
+       block instead — which also keeps any <br> they rely on. */
+    if (el.hasAttribute('data-nosplit')) return;
     var text = el.textContent.trim();
     if (!text || text.length > 90) return;      // don't shred paragraphs
     el.dataset.splitDone = '1';
@@ -55,6 +61,19 @@
     heads.forEach(function(el){ if (el.dataset.splitDone) headObs.observe(el); });
   } else {
     heads.forEach(function(el){ el.classList.add('w-in-play'); });
+  }
+
+  /* Headings that opted out of the split still get an entrance. */
+  var whole = [].slice.call(document.querySelectorAll('[data-nosplit]'));
+  if (!reduced && supported && whole.length){
+    var wholeObs = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if (!en.isIntersecting) return;
+        en.target.classList.add('rise-in');
+        wholeObs.unobserve(en.target);
+      });
+    }, { threshold: 0.25, rootMargin: '0px 0px -8% 0px' });
+    whole.forEach(function(el){ el.classList.add('rise'); wholeObs.observe(el); });
   }
 
   /* ---------- 2. staggered card entrances ------------------ *

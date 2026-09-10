@@ -767,3 +767,148 @@ footer a:hover{color:var(--ink)}
   .w-in{transform:none;opacity:1;transition:none}
   .rise{opacity:1;transform:none;transition:none}
 }
+
+/* ============================================================
+   BACKDROP VIDEO
+   Both clips sit under content, so both need a veil: legible text
+   over moving footage is the whole job, and neither clip was shot
+   to be read against.
+   ============================================================ */
+.rail-bg,.moment-vid{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;z-index:0;pointer-events:none;
+  opacity:0;transition:opacity 1.1s var(--ease-out);
+}
+.rail-bg.on,.moment-vid.on{opacity:.5}
+.moment-vid.on{opacity:.62}
+[data-theme="day"] .rail-bg.on,[data-theme="day"] .moment-vid.on{opacity:.22}
+
+.rail-veil{
+  position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:
+    radial-gradient(70% 55% at 50% 52%,transparent 0%,color-mix(in srgb,var(--bg) 62%,transparent) 100%),
+    linear-gradient(180deg,var(--bg) 0%,transparent 26%,transparent 74%,var(--bg) 100%);
+}
+.gallery-rail,.gallery-nav,.gallery-hint,.gallery-head{position:relative;z-index:2}
+
+/* ---------- the "ready forever" band ---------------------- */
+.moment{
+  position:relative;z-index:6;
+  min-height:min(86svh,760px);
+  display:grid;place-items:center;
+  overflow:hidden;
+  border-block:1px solid var(--line);
+}
+@supports not (min-height:86svh){ .moment{min-height:min(86vh,760px)} }
+.moment-veil{
+  position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:
+    linear-gradient(100deg,var(--bg) 4%,color-mix(in srgb,var(--bg) 72%,transparent) 44%,transparent 78%),
+    linear-gradient(180deg,var(--bg) 0%,transparent 18%,transparent 82%,var(--bg) 100%);
+}
+.moment-copy{position:relative;z-index:2;width:min(var(--max),calc(100% - var(--gutter)*2))}
+.moment-h{
+  margin:10px 0 20px;
+  font:800 clamp(40px,7.4vw,104px)/.86 var(--font-display);letter-spacing:-.05em;
+  background:linear-gradient(100deg,var(--violet),var(--magenta) 42%,var(--cyan));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.moment-copy p{
+  max-width:46ch;color:var(--mist);font-size:clamp(13px,1.1vw,15.5px);line-height:1.8;
+}
+.moment.no-vid .moment-veil{
+  background:radial-gradient(70% 60% at 78% 50%,color-mix(in srgb,var(--violet) 20%,transparent),transparent 70%);
+}
+@media (max-width:760px){
+  .moment{min-height:auto;padding-block:96px}
+  .moment-veil{background:linear-gradient(180deg,var(--bg) 0%,color-mix(in srgb,var(--bg) 62%,transparent) 40%,var(--bg) 100%)}
+}
+
+/* ============================================================
+   MOTION PRESETS
+   Timings and curves follow the skill's motion set. Implemented
+   natively rather than with GSAP: the presets describe the motion,
+   and this page is already tight on a phone — ScrollTrigger plus
+   the core is ~70KB of main-thread work for effects that CSS
+   transitions and one scroll handler already do on the compositor.
+   ============================================================ */
+
+/* Curves, named for the easings the presets call for. */
+:root{
+  --e-power1:cubic-bezier(.25,.46,.45,.94);
+  --e-power2:cubic-bezier(.22,.61,.36,1);
+  --e-expo:cubic-bezier(.16,1,.3,1);
+  --e-back:cubic-bezier(.34,1.56,.64,1);   /* back.out(1.4) */
+}
+
+/* --- Parallax Scroll (13, 14) ------------------------------
+   cinematic.js already measures every [data-parallax] element
+   under one scroll handler and writes --parallax-y. Nothing was
+   reading it, so the depth was being computed and thrown away. */
+[data-parallax]{
+  transform:translate3d(0,var(--parallax-y,0),0);
+  will-change:transform;
+}
+@media (prefers-reduced-motion:reduce){
+  [data-parallax]{transform:none;will-change:auto}
+}
+
+/* --- Stagger List, Standard (8) ----------------------------
+   back.out overshoots slightly, so cards settle instead of
+   stopping dead. */
+.rise{
+  transition:opacity .5s var(--e-power2),
+             transform .55s var(--e-back);
+}
+
+/* --- Stagger List, Complex (9) ----------------------------- */
+.w-in{transition:transform .7s var(--e-expo),opacity .5s var(--e-power1)}
+
+/* --- Hover Micro-interaction (1, 2) ------------------------
+   Press feedback: every control answers a finger or a click,
+   and :active fires on touch where :hover never does. */
+.btn,.nav-open,.g-dot,.panel-cta,.toggle,.g-card{
+  transition-property:transform,opacity,filter,background,border-color,box-shadow;
+  transition-duration:.18s;
+  transition-timing-function:var(--e-power1);
+}
+.btn:active,.nav-open:active,.panel-cta:active{transform:scale(.97)}
+.g-dot:active{transform:scaleX(1.5)}
+.toggle:active .knob{transform:scale(.9)}
+[data-theme=day] .toggle:active .knob{transform:translateX(22px) scale(.9)}
+.burger:active{transform:scale(.94)}
+
+/* --- Carousel / Auto-Rotation (17) -------------------------
+   WCAG wants moving content to be stoppable. The ticker pauses
+   on hover, on keyboard focus, and whenever the tab is hidden. */
+.marquee:hover .mq-track,
+.marquee:focus-within .mq-track,
+.marquee[data-paused="true"] .mq-track{animation-play-state:paused}
+.mq-pause{
+  position:absolute;right:10px;top:50%;transform:translateY(-50%);
+  z-index:3;width:26px;height:26px;border-radius:50%;
+  border:1px solid var(--line-lit);
+  background:color-mix(in srgb,var(--bg) 80%,transparent);
+  color:var(--mist);font:9px var(--font-data);cursor:pointer;
+  display:grid;place-items:center;
+}
+.mq-pause:hover{color:var(--ink);border-color:var(--line-lit)}
+
+/* --- Page Transition, Standard (11) ------------------------
+   yPercent on a transform, so the wipe stays on the compositor. */
+.wipe{
+  position:fixed;inset:0;z-index:180;pointer-events:none;
+  transform:translateY(100%);
+  background:linear-gradient(160deg,var(--violet),var(--magenta) 55%,var(--cyan));
+}
+.wipe.in{
+  transform:translateY(0);
+  transition:transform .42s var(--e-power2);
+}
+.wipe.out{
+  transform:translateY(-100%);
+  /* The exit resolves faster than the entrance, so arriving
+     somewhere never feels slower than leaving. */
+  transition:transform .34s var(--e-power2);
+}
+@media (prefers-reduced-motion:reduce){ .wipe{display:none} }

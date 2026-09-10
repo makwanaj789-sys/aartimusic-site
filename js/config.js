@@ -46,23 +46,20 @@ window.AARTI = {
   },
 
   /* --- video ---
-     showcase   plays in its own section, only once it scrolls into
-                view. Nothing downloads until then.
-     overlay    a looping clip screened over the whole page. It needs a
-                black background — screen blend makes black vanish and
-                keeps the light.
-     Both are optional: empty the path and the block disappears.
+     Two short clips, both silent (the audio track is stripped from
+     the file, not just muted) and both lazy: nothing downloads
+     until the section is near the viewport, and playback pauses
+     the moment it leaves. Empty a path and that clip disappears.
 
-     onMobile decides whether the page-wide overlay loads on phones.
-     It is off there now, and the reason is frame cost rather than
-     the 3.5 MB: screen-blending a fullscreen video over the whole
-     document forces the browser to recomposite every layer beneath
-     it for every video frame. On a phone that alone was eating the
-     frame budget. Desktop keeps it.                                */
+     ribbons    sits behind the effects rail
+     moment     the hourglass in the "ready forever" band          */
   video: {
-    showcase: 'assets/showcase.mp4',
-    overlay:  'assets/overlay.mp4',
-    overlayOpacity: 0.30,
+    /* WebM first where the browser takes it — same clip, roughly
+       40% fewer bytes — with MP4 as the fallback everything plays. */
+    ribbons: { webm: 'assets/ribbons.webm',   mp4: 'assets/ribbons.mp4' },
+    moment:  { webm: 'assets/hourglass.webm', mp4: 'assets/hourglass.mp4' },
+    /* Phones are on mobile data and already carry the nebula, so
+       the backdrops are desktop-only by default. */
     onMobile: false
   },
 

@@ -132,14 +132,7 @@
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(requestResize);
   cacheSections();
 
-  document.querySelectorAll('.menu a, .brand, .nav-open, .btn, footer a[href^="#"]').forEach(function(link){
-    link.addEventListener('click', function(e){
-      var href = link.getAttribute('href');
-      if (!href || href.charAt(0) !== '#') return;
-      var target = document.querySelector(href);
-      if (!target) return;
-      e.preventDefault();
-      target.scrollIntoView({behavior: reduced ? 'auto' : 'smooth', block:'start'});
-    });
-  });
+  /* In-page anchor scrolling now belongs to flourish.js, which
+     covers the jump with a wipe. Two handlers on the same links —
+     one smooth-scrolling, one wiping — fought each other. */
 })();
