@@ -66,28 +66,28 @@ window.AARTI = {
     onMobile: false
   },
 
-  /* --- the WebGL scene ---
-     Three nested rings of bars over a receding grid floor, with
-     embers drifting up through them. The camera pulls back as
-     the page scrolls, so the whole site sits in one space.
-
-     The three rings are drawn as InstancedMesh, so the bar count
-     costs almost nothing in draw calls — it is three either way.
-     Bars and embers are still cut on small screens, and scene.js
-     lowers resolution further if it measures frames running long. */
+  /* --- the nebula ---
+     One cloud of particles that holds the shape of a spinning
+     record through the hero, then bursts into a drifting nebula
+     as you scroll. It is drawn in a single call and animated
+     entirely in the vertex shader, so the particle count below
+     costs the CPU nothing — raising it changes what you see, not
+     what it costs to run. Fill rate is the real limit, so the
+     scene halves the count on phones and lowers resolution by
+     itself if it measures frames running long.                 */
   scene: {
-    hot:    '#F7DCA8',   // top of the flame
-    mid:    '#E0A253',
-    cool:   '#B0553C',   // base of the flame
+    particles: 90000,
 
-    bars:   64,          // bars in the middle ring; the others scale off it
-    radius: 6.0,
-    embers: 90,          // rising sparks; 0 removes them
-    grid:   true,        // the wireframe floor. false leaves the rings floating
+    /* The four lights of the ramp. Every particle sits somewhere
+       between them, so the cloud reads as one spectrum. */
+    palette: {
+      a: '#7C4DFF',   // violet
+      b: '#FF3DA6',   // magenta
+      c: '#35E6E2',   // cyan
+      d: '#FFC46B'    // gold
+    },
 
-    /* What is left of the scene once the hero has scrolled away.
-       Behind a wordmark it is atmosphere; behind a paragraph it
-       is noise. 0 removes it entirely past the hero.            */
-    restOpacity: 0.16
+    /* What is left of the cloud once the hero has scrolled away. */
+    restOpacity: 0.30
   }
 };
