@@ -9,6 +9,7 @@
 <script>/* Theme boot: use the same aarti-theme key as js/theme.js to avoid a night→day flash. */(function(){try{var t=localStorage.getItem('aarti-theme');if(t==='day'||t==='night')document.documentElement.setAttribute('data-theme',t)}catch(e){}})();</script>
 <meta property="og:title" content="Aarti Music">
 <meta property="og:description" content="Search, stream and save any song without leaving Telegram.">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Sora:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/tokens.css"><link rel="stylesheet" href="css/style.css">
@@ -30,7 +31,7 @@
 <main id="top">
 <section class="hero cinematic" id="hero">
 <div class="hero-grid"></div><div class="hero-meta meta-left"><span>01 / 07</span><i></i><span>Telegram music system</span></div><div class="hero-meta meta-right"><span>AM—01</span><span>Music / Motion / Depth</span></div>
-<div class="hero-art-wrap"><div class="hero-halo"></div><div class="hero-orbit orbit-a"></div><div class="hero-orbit orbit-b"></div><img id="heroImg" class="hero-pfp" alt="AartiMusic profile artwork" hidden><div class="hero-core"><span>A</span></div></div>
+<div class="hero-art-wrap"><div class="hero-halo"></div><div class="hero-orbit orbit-a"></div><div class="hero-orbit orbit-b"></div><img id="heroImg" class="hero-pfp" alt="AartiMusic profile artwork" width="512" height="512" decoding="async" fetchpriority="high" hidden><div class="hero-core"><span>A</span></div></div>
 <div class="hero-copy"><p class="eyebrow">Telegram music bot</p><h1 class="wordmark"><span class="row"><span class="ch">A</span><span class="ch">A</span><span class="ch">R</span><span class="ch">T</span><span class="ch">I</span></span><span class="row"><span class="ch">M</span><span class="ch">U</span><span class="ch">S</span><span class="ch">I</span><span class="ch">C</span></span></h1>
 <p class="pitch">Search any song, send it to any chat, or stream it live into a group voice call.<br><em>No app to install — it already lives inside Telegram.</em></p><div class="cta-row"><a class="btn btn-primary" data-magnet data-link="addGroup" href="#"><span>Add to your group</span><b>↗</b></a><a class="btn btn-ghost" data-magnet data-link="bot" href="#"><span>Open in Telegram</span><b>↗</b></a></div></div>
 <div class="hero-bottom"><span>Scroll to enter</span><div class="scroll-hint"><i></i></div><span>Sound / Motion / Depth</span></div>
@@ -73,5 +74,15 @@
 </div></section>
 </main>
 <footer><span>Built by <a data-link="owner" href="#">@umclon</a> · <span id="year">2026</span></span><span><a data-link="updates" href="#">Updates channel</a></span><a href="#top">Back to top ↑</a></footer>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script><script src="js/config.js"></script><script src="js/links.js"></script><script src="js/theme.js"></script><script src="js/motion.js"></script><script src="js/scene.js"></script><script src="js/cinematic.js"></script><script src="js/fx.js"></script><script src="js/reveal.js"></script><script src="js/tilt.js"></script><script src="js/stats.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script defer src="js/config.js"></script>
+<script defer src="js/links.js"></script>
+<script defer src="js/theme.js"></script>
+<script defer src="js/motion.js"></script>
+<script defer src="js/scene.js"></script>
+<script defer src="js/cinematic.js"></script>
+<script defer src="js/fx.js"></script>
+<script defer src="js/reveal.js"></script>
+<script defer src="js/tilt.js"></script>
+<script defer src="js/stats.js"></script>
 </body></html>

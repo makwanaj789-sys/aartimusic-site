@@ -46,11 +46,19 @@
     if (v) el.textContent = v;
   });
 
-  // the picture inside the hero ring
+  // the picture inside the hero ring.
+  // WebP first — the same artwork is a fiftieth of the PNG's size —
+  // with the PNG kept as the fallback for anything that can't decode it.
   var art = document.getElementById('heroImg');
   if (art){
     if (c.heroImage){
+      var triedFallback = false;
       art.addEventListener('error', function(){
+        if (!triedFallback && c.heroImageFallback){
+          triedFallback = true;
+          art.src = c.heroImageFallback;
+          return;
+        }
         art.hidden = true;              // wrong path or missing file — ring alone
         console.warn('hero image not found:', c.heroImage);
       });

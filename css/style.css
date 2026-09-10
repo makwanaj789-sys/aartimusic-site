@@ -140,3 +140,217 @@ footer{position:relative;z-index:7}
 .fx-stage .effect-select .n,
 .fx-stage .show-copy .role { color:#E0A253; }
 .fx-stage .effect-select { -webkit-tap-highlight-color:transparent; }
+
+
+/* ============================================================
+   PERFORMANCE PASS
+   Everything above stays. This layer switches off the handful of
+   declarations that were costing the most per frame, and keeps the
+   look by paying for it in ways the compositor doesn't re-do on
+   every scroll pixel.
+
+   The four real offenders were:
+     1. a full-screen grain layer re-rasterising 7x a second
+     2. ~20 elements each running their own backdrop blur
+     3. a fullscreen video carrying a filter chain, a blend mode
+        and a radial mask, all composited over the whole page
+     4. will-change parked on elements that animate once, holding
+        GPU layers open for the life of the session
+   ============================================================ */
+
+/* --- 1. grain -----------------------------------------------
+   inset:-50% meant a surface four times the viewport, and the
+   steps(2) loop repainted all of it every 280ms. Grain reads the
+   same standing still, at none of the cost.                    */
+.noise{
+  inset:0;
+  animation:none;
+  background-size:180px 180px;
+}
+
+/* Both of these are fixed, cover the viewport and sit above the
+   scrolling content. Without a layer of their own the compositor
+   repaints them against whatever scrolled underneath, every frame.
+   The existing rotate(.001deg) on the grain does not do it — a 2D
+   transform is not a promotion trigger; translateZ(0) is.
+
+   Phones only, and that boundary is measured rather than assumed:
+   on a throttled phone viewport this was worth several frames a
+   second and about half the blocking time, while on a desktop
+   viewport the same two full-size layers cost more to composite
+   than the repaints they save. */
+@media (max-width:900px){
+  .noise,.vignette{
+    transform:translateZ(0);
+    will-change:transform;
+  }
+}
+
+/* --- 2. backdrop blur ---------------------------------------
+   A backdrop-filter forces the browser to snapshot and blur
+   everything painted beneath the element — here that meant the
+   WebGL canvas, the grain and the overlay video, separately, for
+   every card on the page. The surfaces are tinted instead, which
+   is what the blur was reading as anyway.                       */
+.btn,
+.stat,
+.edit-card,
+.cmd,
+.card,
+.effect-list,
+.stat-grid{
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+}
+.stat,.edit-card,.cmd,.card{
+  background-color:color-mix(in srgb,var(--bg-2) 82%,transparent);
+}
+
+/* The navigation is one element and sits above everything, so it
+   is the one place a blur is still worth it — desktop only. */
+@media (min-width:761px){
+  .nav.solid{
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+  }
+}
+@media (max-width:760px){
+  .nav.solid{
+    backdrop-filter:none;
+    -webkit-backdrop-filter:none;
+    background:color-mix(in srgb,var(--bg) 94%,transparent);
+  }
+}
+
+/* --- 3. the canvas ------------------------------------------
+   saturate()/contrast() on the canvas re-filtered every rendered
+   frame through the compositor. The same warmth is already in the
+   scene's own colours, so the filter bought nothing.            */
+#scene{
+  filter:none;
+  will-change:opacity;
+}
+
+/* --- 4. layer promotion -------------------------------------
+   will-change is a hint with a cost — each one holds a texture in
+   GPU memory — but taking it away costs more wherever the element
+   really is written to every frame. Measured on a throttled phone,
+   stripping it from .hero-meta/.hero-bottom/.btn lost ~8fps and
+   added about a second of blocking across a scroll: those three
+   are repositioned by heroFrame() on every scroll frame, and
+   without the hint each write repaints instead of composites.
+
+   So only the wordmark loses it. Its ten letters transition once,
+   on load, and then hold ten layers open for the whole session. */
+.wordmark .ch{
+  will-change:auto;
+}
+.hero-copy,
+.hero-art-wrap,
+.hero-meta,
+.hero-bottom{
+  will-change:transform;
+}
+
+/* --- 5. the overlay video -----------------------------------
+   A fullscreen video is affordable. A fullscreen video that is
+   colour-graded, masked with a radial gradient and screen-blended
+   over the entire document is not — that combination re-composites
+   the whole page for every video frame. Blend and opacity carry
+   the effect; the filter and mask are dropped.                  */
+.overlay-vid{
+  filter:none;
+  mask-image:none;
+  -webkit-mask-image:none;
+}
+[data-theme="day"] .overlay-vid{filter:none}
+
+/* Phones do not get it at all. config.js also stops the download,
+   so this is only the belt to that pair of braces. */
+@media (max-width:900px){
+  .overlay-vid{display:none!important}
+}
+
+/* --- 6. 3D contexts on touch --------------------------------
+   Flattening these on touch looked like free savings — tilt.js
+   won't run without a hovering cursor, so the 3D context has no
+   interaction to serve. It measured 5fps slower with roughly twice
+   the blocking time, because preserve-3d was quietly promoting
+   each card to its own layer, and the cards sit inside a section
+   that gets a scroll-driven transform. Flattened, that transform
+   repaints their contents instead of moving a finished texture.
+   Left as it was, deliberately. */
+
+/* --- 7. large blurs -----------------------------------------
+   Blur radius is quadratic in cost and these sit on elements that
+   move with the scroll, so each one re-rasterises as it travels.
+   Trimmed on desktop, dropped on phones where they read as a flat
+   glow regardless.                                              */
+.hero-halo{filter:blur(16px)}
+.hero-copy:before{filter:blur(18px)}
+.hero-art-wrap{filter:none}
+@media (max-width:760px){
+  .hero-halo{filter:none;opacity:.75}
+  .hero-copy:before{filter:none;opacity:.7}
+  .fx-light{filter:none}
+  .fx-stage video{filter:none}
+  .hero-pfp{box-shadow:0 0 0 1px color-mix(in srgb,var(--flame-hot) 45%,transparent)}
+}
+
+/* content-visibility:auto was tried here and taken back out.
+   cinematic.js caches every section's offset once and maps scroll
+   position onto it; a skipped section reports its placeholder
+   height instead of its real one, so the progress bar and the
+   whole camera choreography drift until it happens to render. The
+   paint it saves is not worth the scroll system it breaks. */
+
+/* --- 8. reduced motion -------------------------------------
+   Anything still moving after the two blocks above gets stopped
+   here as well, so the preference reaches the new rules too.    */
+@media (prefers-reduced-motion:reduce){
+  .noise{animation:none}
+  .mq-track{animation:none}
+  .hero-orbit,.spark,.dot,.scroll-hint i{animation:none}
+  #scene{opacity:.5!important}
+}
+
+/* ============================================================
+   NAV CLICKABILITY
+   .nav and main were both z-index:6. Equal z-index falls back to
+   DOM order, and main comes second, so the hero painted over the
+   fixed navigation — every link in it, the theme toggle and the
+   "Open bot" CTA included, was unreachable at the top of the page.
+   elementFromPoint over the toggle returned the hero section.
+
+   10 puts the bar above main (6) and its sections (7) while still
+   sitting under the grain (12), so the overlay reads across it the
+   way it did before.
+   ============================================================ */
+.nav{z-index:10}
+
+/* ============================================================
+   EFFECT HEADLINE OVERFLOW
+   .show-copy was capped at 330px while its heading renders at
+   64px in an 800-weight display face. "SLOWED" fits; "NIGHTCORE",
+   "CONCERT HALL" and "SLOWED + REVERB" do not — and because the
+   block is right-aligned inside a stage that clips, the overflow
+   ran out of the panel and the biggest word in the section was
+   cut in half. Four of the seven effects were unreadable.
+
+   Widening the box handles it at normal sizes, and letting a long
+   word wrap rather than overflow keeps it correct whatever the
+   display font actually measures — including before the webfont
+   arrives, when the fallback is wider.
+   ============================================================ */
+.show-copy{
+  max-width:min(48%,560px);
+  overflow-wrap:anywhere;
+}
+.show-copy strong{
+  overflow-wrap:anywhere;
+  text-wrap:balance;
+}
+@media (max-width:760px){
+  .show-copy{max-width:none}
+  .show-copy strong{font-size:clamp(40px,12vw,64px)}
+}
