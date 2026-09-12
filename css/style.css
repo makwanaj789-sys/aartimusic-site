@@ -912,3 +912,177 @@ footer a:hover{color:var(--ink)}
   transition:transform .34s var(--e-power2);
 }
 @media (prefers-reduced-motion:reduce){ .wipe{display:none} }
+
+/* ============================================================
+   ICONS
+   One inline sprite of <symbol>s, referenced with <use>. No icon
+   font, no CDN, no emoji — the skill's rule, and emoji render
+   differently on every platform and read as text to a screen
+   reader. Each symbol is stroked with currentColor, so an icon
+   takes the colour of whatever it sits in.
+   ============================================================ */
+.sprite{position:absolute;width:0;height:0;overflow:hidden}
+.g-icon,.c-icon{
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.6;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  flex:none;
+}
+
+/* --- on the effect cards --- */
+.g-icon{
+  position:absolute;top:26px;right:28px;
+  width:30px;height:30px;
+  color:#fff;opacity:.62;
+  transition:opacity .35s var(--e-power2),transform .45s var(--e-back);
+}
+.g-card.is-active .g-icon{opacity:1;transform:scale(1.08)}
+
+/* --- on the contact cards --- */
+.c-icon{
+  width:26px;height:26px;
+  color:var(--magenta);
+  transition:color .35s,transform .45s var(--e-back);
+}
+.card:hover .c-icon{color:var(--cyan);transform:translateY(-2px) scale(1.06)}
+
+@media (max-width:760px){
+  .g-icon{top:20px;right:22px;width:26px;height:26px}
+  .c-icon{width:24px;height:24px}
+}
+@media (prefers-reduced-motion:reduce){
+  .g-icon,.c-icon{transition:none}
+  .g-card.is-active .g-icon,.card:hover .c-icon{transform:none}
+}
+
+/* ============================================================
+   EFFECT COVER ART
+   Each card carries a drawing of what its effect actually does —
+   a stretched wave for Slowed, trailing ghosts for Reverb, an
+   orbit for 8D, a vault with a long tail for Concert Hall. Drawn
+   as SVG in the page rather than fetched: seven covers cost no
+   bytes, stay exactly on palette because they inherit the card's
+   own two tones, and stay crisp at any size.
+   ============================================================ */
+.g-art{
+  position:absolute;inset:0;width:100%;height:100%;
+  z-index:1;pointer-events:none;
+  fill:none;
+  stroke-linecap:round;stroke-linejoin:round;
+  color:#fff;
+  opacity:.9;
+  mask-image:linear-gradient(180deg,#000 0%,#000 52%,rgba(0,0,0,.35) 78%,transparent 100%);
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 52%,rgba(0,0,0,.35) 78%,transparent 100%);
+}
+/* The art sits under the copy but over the gradient. */
+.g-card:after{z-index:2}
+.g-face{z-index:3}
+
+.g-art path,.g-art rect,.g-art circle{stroke:currentColor}
+
+/* The leading line is bright; each one behind it is a step dimmer,
+   which is what makes the ghosts read as echoes rather than as
+   four unrelated lines. */
+.g-art .l1{stroke-width:2.6;opacity:.95}
+.g-art .l2{stroke-width:2;opacity:.55}
+.g-art .l3{stroke-width:1.6;opacity:.32}
+.g-art .e0{stroke-width:2.6;opacity:.95}
+.g-art .e1{stroke-width:2.2;opacity:.6}
+.g-art .e2{stroke-width:1.8;opacity:.38}
+.g-art .e3{stroke-width:1.5;opacity:.24}
+.g-art .e4{stroke-width:1.2;opacity:.14}
+.g-art .v0{stroke-width:2.2;opacity:.8}
+.g-art .v1{stroke-width:1.8;opacity:.5}
+.g-art .v2{stroke-width:1.5;opacity:.32}
+.g-art .v3{stroke-width:1.2;opacity:.2}
+.g-art .a-tail{stroke-width:2;opacity:.7}
+.g-art .a-dim rect{stroke:none;fill:currentColor;opacity:.22}
+.g-art .a-fill{stroke:none;fill:currentColor;opacity:.14}
+.g-art .a-head{stroke:none;fill:currentColor;opacity:.95}
+
+/* Front card: the drawing comes up to full strength and drifts a
+   little, so the rail has a focal point rather than seven equals. */
+.g-card .g-art{
+  transform:translateY(8px) scale(1.02);
+  transition:opacity .5s var(--e-power2),transform .7s var(--e-power2);
+  opacity:.5;
+}
+.g-card.is-active .g-art{opacity:1;transform:none}
+
+@media (max-width:760px){
+  .g-art{opacity:.8}
+  .g-art .l1,.g-art .e0{stroke-width:3}
+}
+@media (prefers-reduced-motion:reduce){
+  .g-card .g-art{transition:none;transform:none}
+}
+
+/* ============================================================
+   DONATIONS
+   Two halves: the address and its button, and the QR for anyone
+   on a computer. The QR is an SVG path drawn from the same UPI
+   string the button uses, so it cannot point somewhere else.
+   ============================================================ */
+.donate{
+  display:grid;grid-template-columns:1fr auto;gap:38px;align-items:center;
+  padding:36px;
+  border:1px solid var(--line);border-radius:var(--radius);
+  background:color-mix(in srgb,var(--bg-2) 78%,transparent);
+  position:relative;overflow:hidden;
+}
+.donate:before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(80% 120% at 100% 0%,color-mix(in srgb,var(--violet) 16%,transparent),transparent 62%);
+}
+.donate-main{position:relative;z-index:1;max-width:52ch}
+.donate .role{
+  display:block;font:9px var(--font-data);letter-spacing:.18em;
+  text-transform:uppercase;color:var(--cyan);margin-bottom:12px;
+}
+.upi-id{
+  display:inline-flex;align-items:center;gap:14px;
+  padding:13px 16px;margin-bottom:18px;cursor:pointer;
+  border:1px dashed var(--line-lit);border-radius:10px;
+  font:13px var(--font-data);color:var(--ink);
+  background:var(--surface);
+  transition:border-color .3s,background .3s;
+  max-width:100%;
+}
+.upi-id:hover{border-color:var(--cyan);background:var(--surface-2)}
+.upi-id span:first-child{overflow-wrap:anywhere;text-align:left}
+.upi-copy-hint{
+  font-size:9px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--magenta);flex:none;
+}
+.upi-id.copied{border-color:var(--cyan);border-style:solid}
+.upi-id.copied .upi-copy-hint{color:var(--cyan)}
+.donate-cta{margin-bottom:16px}
+.donate-note{margin:0;color:var(--mist);font-size:12px;line-height:1.7}
+
+.donate-qr{
+  position:relative;z-index:1;margin:0;
+  display:flex;flex-direction:column;align-items:center;gap:12px;
+}
+.donate-qr svg{
+  width:clamp(136px,15vw,176px);height:auto;
+  padding:12px;border-radius:12px;
+  background:#fff;                 /* a QR needs real contrast to scan */
+  display:block;
+}
+.donate-qr path{fill:#05050B}
+.donate-qr figcaption{
+  font:9px var(--font-data);letter-spacing:.18em;
+  text-transform:uppercase;color:var(--mist);
+}
+
+@media (max-width:760px){
+  .donate{grid-template-columns:1fr;gap:26px;padding:26px;justify-items:start}
+  .donate-cta{width:100%;justify-content:space-between}
+  .upi-id{width:100%;justify-content:space-between}
+  /* On a phone the button opens a real app, so the QR is the
+     fallback rather than the main path — it goes below, smaller. */
+  .donate-qr{align-self:center;justify-self:center}
+  .donate-qr svg{width:150px}
+}

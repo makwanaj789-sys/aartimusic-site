@@ -12,7 +12,10 @@ window.AARTI = {
   ownerHandle:    'umclon',
   updatesChannel: 'clon_ch1t',
   supportGroup:   '',            // e.g. 'aartimusic_support'
-  instagram:      'h81t6',       // handle only, no @
+  /* Two Instagram accounts: the official AartiMusic page a friend
+     runs, and the owner's own. Leave either empty to drop its card. */
+  instagram:      'aartimusic77',  // official page, handle only, no @
+  instagramOwner: 'h81t6',         // owner's personal page
   email:          '',            // e.g. 'hello@aartimusic.com'
 
   /* --- hero artwork ---
@@ -20,6 +23,19 @@ window.AARTI = {
      assets/. Leave empty ('') and it simply isn't shown.       */
   heroImage: 'assets/pfp.webp',
   heroImageFallback: 'assets/pfp.png',
+
+  /* --- donations ---
+     A UPI address, not a payment gateway. A gateway would add
+     signup, KYC, fees and a cut on every rupee; a UPI link opens
+     the payer's own app and the money lands in the same account
+     either way. Phones get the link, desktops get the QR beside it.
+
+     Leave upi empty and the whole section disappears.            */
+  donate: {
+    upi:  'makwanaj789-1@okhdfcbank',
+    name: 'AartiMusic',
+    note: 'Support AartiMusic'
+  },
 
   /* --- live stats ---
      Where the numbers come from: a file sitting next to
@@ -55,12 +71,25 @@ window.AARTI = {
      moment     the hourglass in the "ready forever" band          */
   video: {
     /* WebM first where the browser takes it — same clip, roughly
-       40% fewer bytes — with MP4 as the fallback everything plays. */
-    ribbons: { webm: 'assets/ribbons.webm',   mp4: 'assets/ribbons.mp4' },
-    moment:  { webm: 'assets/hourglass.webm', mp4: 'assets/hourglass.mp4' },
-    /* Phones are on mobile data and already carry the nebula, so
-       the backdrops are desktop-only by default. */
-    onMobile: false
+       40% fewer bytes — with MP4 as the fallback everything plays.
+
+       The `sm` pair is a 480-wide encode for phones. Serving the
+       960-wide file to a 390px screen means decoding about six
+       times the pixels that reach the display, and on a phone that
+       is frames, not just bytes. */
+    ribbons: {
+      webm: 'assets/ribbons.webm',   mp4: 'assets/ribbons.mp4',
+      smWebm: 'assets/ribbons-sm.webm', smMp4: 'assets/ribbons-sm.mp4'
+    },
+    moment: {
+      webm: 'assets/hourglass.webm', mp4: 'assets/hourglass.mp4',
+      smWebm: 'assets/hourglass-sm.webm', smMp4: 'assets/hourglass-sm.mp4'
+    },
+    /* On for phones too. The clips are small (WebM 853KB and
+       405KB), neither downloads until its section is near the
+       viewport, and both pause the moment it leaves — so a visitor
+       who never scrolls that far never pays for them. */
+    onMobile: true
   },
 
   /* --- the effects rail ---
