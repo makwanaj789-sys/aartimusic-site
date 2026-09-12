@@ -956,3 +956,65 @@ footer a:hover{color:var(--ink)}
   .g-icon,.c-icon{transition:none}
   .g-card.is-active .g-icon,.card:hover .c-icon{transform:none}
 }
+
+/* ============================================================
+   EFFECT COVER ART
+   Each card carries a drawing of what its effect actually does —
+   a stretched wave for Slowed, trailing ghosts for Reverb, an
+   orbit for 8D, a vault with a long tail for Concert Hall. Drawn
+   as SVG in the page rather than fetched: seven covers cost no
+   bytes, stay exactly on palette because they inherit the card's
+   own two tones, and stay crisp at any size.
+   ============================================================ */
+.g-art{
+  position:absolute;inset:0;width:100%;height:100%;
+  z-index:1;pointer-events:none;
+  fill:none;
+  stroke-linecap:round;stroke-linejoin:round;
+  color:#fff;
+  opacity:.9;
+  mask-image:linear-gradient(180deg,#000 0%,#000 52%,rgba(0,0,0,.35) 78%,transparent 100%);
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 52%,rgba(0,0,0,.35) 78%,transparent 100%);
+}
+/* The art sits under the copy but over the gradient. */
+.g-card:after{z-index:2}
+.g-face{z-index:3}
+
+.g-art path,.g-art rect,.g-art circle{stroke:currentColor}
+
+/* The leading line is bright; each one behind it is a step dimmer,
+   which is what makes the ghosts read as echoes rather than as
+   four unrelated lines. */
+.g-art .l1{stroke-width:2.6;opacity:.95}
+.g-art .l2{stroke-width:2;opacity:.55}
+.g-art .l3{stroke-width:1.6;opacity:.32}
+.g-art .e0{stroke-width:2.6;opacity:.95}
+.g-art .e1{stroke-width:2.2;opacity:.6}
+.g-art .e2{stroke-width:1.8;opacity:.38}
+.g-art .e3{stroke-width:1.5;opacity:.24}
+.g-art .e4{stroke-width:1.2;opacity:.14}
+.g-art .v0{stroke-width:2.2;opacity:.8}
+.g-art .v1{stroke-width:1.8;opacity:.5}
+.g-art .v2{stroke-width:1.5;opacity:.32}
+.g-art .v3{stroke-width:1.2;opacity:.2}
+.g-art .a-tail{stroke-width:2;opacity:.7}
+.g-art .a-dim rect{stroke:none;fill:currentColor;opacity:.22}
+.g-art .a-fill{stroke:none;fill:currentColor;opacity:.14}
+.g-art .a-head{stroke:none;fill:currentColor;opacity:.95}
+
+/* Front card: the drawing comes up to full strength and drifts a
+   little, so the rail has a focal point rather than seven equals. */
+.g-card .g-art{
+  transform:translateY(8px) scale(1.02);
+  transition:opacity .5s var(--e-power2),transform .7s var(--e-power2);
+  opacity:.5;
+}
+.g-card.is-active .g-art{opacity:1;transform:none}
+
+@media (max-width:760px){
+  .g-art{opacity:.8}
+  .g-art .l1,.g-art .e0{stroke-width:3}
+}
+@media (prefers-reduced-motion:reduce){
+  .g-card .g-art{transition:none;transform:none}
+}
