@@ -15,12 +15,20 @@
 
   /* Pick the lightest format this browser actually accepts, rather
      than shipping two <source> tags and letting it guess. */
+  var narrow = window.innerWidth <= 900;
+
   function pick(entry){
     if (!entry) return '';
     if (typeof entry === 'string') return entry;
     var probe = document.createElement('video');
-    if (entry.webm && probe.canPlayType('video/webm; codecs="vp9"')) return entry.webm;
-    if (entry.mp4  && probe.canPlayType('video/mp4; codecs="avc1.4d401f"')) return entry.mp4;
+    var webm = probe.canPlayType('video/webm; codecs="vp9"');
+    // Phones take the small encode when one exists.
+    if (narrow){
+      if (webm && entry.smWebm) return entry.smWebm;
+      if (entry.smMp4) return entry.smMp4;
+    }
+    if (webm && entry.webm) return entry.webm;
+    if (entry.mp4 && probe.canPlayType('video/mp4; codecs="avc1.4d401f"')) return entry.mp4;
     return entry.mp4 || entry.webm || '';
   }
 
