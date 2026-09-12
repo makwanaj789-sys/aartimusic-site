@@ -912,3 +912,47 @@ footer a:hover{color:var(--ink)}
   transition:transform .34s var(--e-power2);
 }
 @media (prefers-reduced-motion:reduce){ .wipe{display:none} }
+
+/* ============================================================
+   ICONS
+   One inline sprite of <symbol>s, referenced with <use>. No icon
+   font, no CDN, no emoji — the skill's rule, and emoji render
+   differently on every platform and read as text to a screen
+   reader. Each symbol is stroked with currentColor, so an icon
+   takes the colour of whatever it sits in.
+   ============================================================ */
+.sprite{position:absolute;width:0;height:0;overflow:hidden}
+.g-icon,.c-icon{
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.6;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  flex:none;
+}
+
+/* --- on the effect cards --- */
+.g-icon{
+  position:absolute;top:26px;right:28px;
+  width:30px;height:30px;
+  color:#fff;opacity:.62;
+  transition:opacity .35s var(--e-power2),transform .45s var(--e-back);
+}
+.g-card.is-active .g-icon{opacity:1;transform:scale(1.08)}
+
+/* --- on the contact cards --- */
+.c-icon{
+  width:26px;height:26px;
+  color:var(--magenta);
+  transition:color .35s,transform .45s var(--e-back);
+}
+.card:hover .c-icon{color:var(--cyan);transform:translateY(-2px) scale(1.06)}
+
+@media (max-width:760px){
+  .g-icon{top:20px;right:22px;width:26px;height:26px}
+  .c-icon{width:24px;height:24px}
+}
+@media (prefers-reduced-motion:reduce){
+  .g-icon,.c-icon{transition:none}
+  .g-card.is-active .g-icon,.card:hover .c-icon{transform:none}
+}
