@@ -7,6 +7,7 @@ points `webDir` here, so these four files are what gets packaged.
     app.css      all styling and animation
     app.js       one IIFE: state, playback, and every interaction
     config.js    where the server is, and the key used to reach it
+    SYNC.md      what the server has to do for favourites to sync
 
 No build step and no dependencies. Edit, run `npx cap sync android`,
 rebuild. Opening `index.html` straight from disk works too, minus the
