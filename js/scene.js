@@ -23,6 +23,10 @@
     renderer = new THREE.WebGLRenderer({canvas: canvas, alpha: true, antialias: false,
       powerPreference: 'default', depth: true, stencil: false});
   } catch (_) { fallback(); return; }
+  // Compress highlights before output; otherwise several lights clip to flat white.
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = .85;
+  renderer.outputEncoding = THREE.sRGBEncoding;
   var scene = new THREE.Scene();
   var camera = new THREE.PerspectiveCamera(46, 1, .1, 100);
   camera.position.z = 18;
@@ -67,7 +71,7 @@
       'vec2 p=gl_PointCoord-.5; float d=dot(p,p); if(d>.25)discard;',
       'vec3 c=.5+.5*cos(6.28318*(tone*.65+hue+vec3(.05,.36,.58)));',
       'c=mix(c,vec3(.12,.9,1.),.22); c=mix(c,c*.45,day);',
-      'gl_FragColor=vec4(c,(1.0-smoothstep(.0,.25,d))*light*.68);',
+      'gl_FragColor=vec4(c,(1.0-smoothstep(.0,.25,d))*light*.28);',
       '}'
     ].join('\n')
   });
@@ -88,13 +92,13 @@
     rig.add(line); orbits.push(line);
   }
   // Lit solid geometry anchors the particles in a tangible three-dimensional space.
-  scene.add(new THREE.AmbientLight(0x688ab8, .8));
-  var key = new THREE.PointLight(0x67e8ff, 2.7, 70); key.position.set(-7, 7, 12); scene.add(key);
-  var rim = new THREE.PointLight(0x8d60ff, 3.4, 70); rim.position.set(8, -3, 6); scene.add(rim);
-  var white = new THREE.DirectionalLight(0xffffff, 1.4); white.position.set(2, 8, 12); scene.add(white);
+  scene.add(new THREE.AmbientLight(0x8ba9c8, .48));
+  var key = new THREE.PointLight(0x67c8df, .85, 70); key.position.set(-7, 7, 12); scene.add(key);
+  var rim = new THREE.PointLight(0x8060dd, 1.0, 70); rim.position.set(8, -3, 6); scene.add(rim);
+  var white = new THREE.DirectionalLight(0xc7e3ff, .65); white.position.set(2, 8, 12); scene.add(white);
   var sculpture = new THREE.Group(); rig.add(sculpture);
-  var metal = new THREE.MeshPhongMaterial({color: 0x182c48, specular: 0xb5ecff, shininess: 110});
-  var bright = new THREE.MeshPhongMaterial({color: 0x58b5ce, specular: 0xffffff, shininess: 130});
+  var metal = new THREE.MeshStandardMaterial({color: 0x102637, roughness: .48, metalness: .32});
+  var bright = new THREE.MeshStandardMaterial({color: 0x227e91, roughness: .4, metalness: .28});
   var record = new THREE.Group(); sculpture.add(record);
   var disc = new THREE.Mesh(new THREE.CylinderGeometry(2.9, 2.9, .32, small ? 64 : 96), metal);
   disc.rotation.x = Math.PI / 2; record.add(disc);
@@ -103,7 +107,7 @@
     groove.position.z = .175; record.add(groove);
   }
   var labelDisc = new THREE.Mesh(new THREE.CylinderGeometry(.94, .94, .35, 48),
-    new THREE.MeshPhongMaterial({color: 0x7058ed, emissive: 0x28184b, specular: 0xffffff, shininess: 70}));
+    new THREE.MeshStandardMaterial({color: 0x5546a1, roughness: .58, metalness: .15}));
   labelDisc.rotation.x = Math.PI / 2; record.add(labelDisc);
   var hub = new THREE.Mesh(new THREE.TorusGeometry(.25, .07, 8, 32), bright); hub.position.z = .23; record.add(hub);
   var knot = new THREE.Mesh(new THREE.TorusKnotGeometry(2.2, .58, small ? 80 : 144, small ? 8 : 14, 2, 3), bright);
@@ -114,12 +118,12 @@
   var tunnel = new THREE.Group(); scene.add(tunnel);
   var frameGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(14, 14, .3));
   var frames = [];
-  for (var f = 0; f < 7; f++) {
+  for (var f = 0; f < 4; f++) {
     var frameLine = new THREE.LineSegments(frameGeo, new THREE.LineBasicMaterial({
       color: f % 2 ? 0x7f6cff : 0x48dacd, transparent: true, opacity: .28}));
     tunnel.add(frameLine); frames.push(frameLine);
   }
-  var flightTop = 0, flightHeight = 1, flight = 0;
+  var flightTop = 0, flightHeight = 1, flight = 0, exit = 0;
   var flightSection = document.getElementById('dimension');
   var quality = 1, raf = 0, previous = 0, elapsed = 0, bad = 0, kick = 0;
   var stage = 0, hero = 0, galleryTop = 0, galleryHeight = 1, heroHeight = 1;
@@ -147,6 +151,7 @@
   function scroll() {
     hero = Math.min(1, scrollY / Math.max(1, heroHeight));
     flight = Math.max(0, Math.min(1, (scrollY - flightTop) / flightHeight));
+    exit = flightSection ? Math.max(0, Math.min(1, (scrollY - flightTop - flightHeight) / Math.max(1, innerHeight * .65))) : 0;
     stage = hero + Math.max(0, Math.min(1, (scrollY - galleryTop) / galleryHeight));
     request();
   }
@@ -184,10 +189,14 @@
     uniforms.form.value = reduced ? 0 : stage;
     uniforms.pulse.value = still ? 0 : Math.sin(elapsed * 1.8) * .5 + kick;
     uniforms.aim.value.set(x, y);
-    rig.position.set(small ? 0 : (1 - hero) * 4.7, small ? (1 - hero) * 3.3 : 0, 0);
+    rig.position.set(small ? 0 : (1 - hero) * 4.7, small ? (1 - hero) * 3.3 + hero * 2.0 : 0, 0);
     var journey = reduced ? 0 : flight;
-    rig.scale.setScalar((small ? .68 : 1) * (1 + Math.sin(journey * Math.PI) * .22));
-    camera.position.z = 18 - Math.sin(journey * Math.PI) * 3;
+    rig.scale.setScalar((small ? .60 : .92) * (1 + Math.sin(journey * Math.PI) * .10));
+    sculpture.visible = exit < 1;
+    sculpture.scale.setScalar(1 - exit * .3);
+    canvas.style.opacity = String(1 - exit * .82);
+    tunnel.visible = exit < 1;
+    camera.position.z = 18 - Math.sin(journey * Math.PI) * 1.2;
     sculpture.rotation.set(.22 + journey * .65, -.35 + journey * Math.PI * 1.8, elapsed * .12);
     record.scale.setScalar(Math.max(.001, 1 - Math.max(0, journey - .25) * 1.8));
     record.visible = journey < .81;
@@ -202,15 +211,15 @@
     }
     bars.instanceMatrix.needsUpdate = true;
     tunnel.position.x = small ? 0 : (1 - hero) * 4.7;
-    tunnel.position.y = small ? (1 - hero) * 3.3 : 0;
+    tunnel.position.y = small ? (1 - hero) * 3.3 + hero * 2.0 : 0;
     frames.forEach(function(line, index) {
       line.position.z = 6 - index * 6 + journey * 14;
       line.rotation.z = index * .16 + journey * .65 + (still ? 0 : elapsed * .018);
       var distance = camera.position.z - line.position.z;
-      line.material.opacity = Math.max(0, Math.min(.32, (distance - 2) * .05));
+      line.material.opacity = Math.max(0, Math.min(.13, (distance - 2) * .025) * (1 - exit));
       line.visible = distance > 2;
     });
-    rig.rotation.set(still ? .15 : y * .16, still ? -.25 : -.25 + x * .3 + Math.sin(elapsed * .16) * .25, still ? 0 : elapsed * .035);
+    rig.rotation.set(still ? .15 : y * .12, still ? -.25 : -.25 + x * .24 + Math.sin(elapsed * .16) * .18, still ? 0 : Math.sin(elapsed * .12) * .09);
     orbits.forEach(function(line, index) {
       line.rotation.y = index * .48 + (still ? 0 : elapsed * .08);
       line.material.opacity = (.22 - hero * .12) * (uniforms.day.value ? .65 : 1);

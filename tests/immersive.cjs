@@ -53,6 +53,21 @@ for(const width of [390,1440]){
  }
  t.close();
 }
+{
+ const t=setup();const w=t.w;
+ const section=w.document.getElementById('dimension');
+ section.getBoundingClientRect=()=>({top:900-w.scrollY});
+ Object.defineProperty(section,'offsetHeight',{value:3200});
+ t.load('js/scene.js');t.tick();
+ const sculpture=t.scene.children[0].children.find(el=>el.type==='Group');
+ assert(sculpture.visible,'sculpture visible in intro');
+ w.scrollY=5000;w.dispatchEvent(new w.Event('scroll'));t.tick();
+ assert(!sculpture.visible,'solid sculpture must not obscure later reading sections');
+ assert(Number(w.document.getElementById('scene').style.opacity)<.2);
+ w.scrollY=0;w.dispatchEvent(new w.Event('scroll'));t.tick();
+ assert(sculpture.visible,'scrolling back restores sculpture');
+ t.close();
+}
 // Every local script / stylesheet / image asset referenced by HTML must exist.
 const dom=new JSDOM(html);for(const e of dom.window.document.querySelectorAll('[src],link[rel="stylesheet"]')){
  const p=e.getAttribute('src')||e.getAttribute('href');if(p&&!p.startsWith('http')&&!p.startsWith('data:'))assert(fs.existsSync(p),p);

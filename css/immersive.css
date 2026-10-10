@@ -69,3 +69,16 @@
  .dimension-static{height:auto}.dimension-static .dimension-pin{min-height:0}.dimension-static .dimension-captions{height:auto}
 }
 @media(prefers-reduced-motion:reduce){.feat{transform:none!important}.dimension{height:auto}.dimension-pin{position:relative;height:auto;padding-top:140px}.dimension-captions{height:auto;display:grid;gap:20px}.dimension-caption{position:relative;width:100%;opacity:1;visibility:visible}.dimension-title{display:none}}
+
+/* Keep the sculpture distinct from the reading surface on narrow screens. */
+.dimension-caption{background:var(--bg-2);border:1px solid var(--line-lit);border-left:2px solid var(--cyan);border-radius:8px;box-shadow:0 14px 35px #0003}
+.dimension-title{-webkit-text-stroke-color:color-mix(in srgb,var(--ink) 10%,transparent)}
+.feat,.cmd,.edit-card,.card{background:var(--bg-2)}
+.hero-pfp{box-shadow:none}
+@media(max-width:760px){
+ .dimension-pin{padding-bottom:105px}.dimension-captions{height:205px}
+ .dimension-caption{background:var(--bg-2)}.dimension-caption h2{font-size:32px;line-height:1.02}
+ .hero .pitch{font-size:13px;line-height:1.8}.hero .cta-row{gap:12px}
+ .hero .btn{min-height:48px;justify-content:space-between;width:min(100%,330px)}
+ .feat{box-shadow:6px 8px 0 -1px var(--bg),7px 9px 0 0 var(--line-lit)}
+}
