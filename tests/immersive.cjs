@@ -30,6 +30,25 @@ function setup(reduced=false){
  assert.equal(w.document.querySelectorAll('.journey-copy article[aria-hidden]').length,0);
  assert.equal(t.pending,0);t.close();
 }
+{
+ const t=setup(),w=t.w;
+ const style=w.document.createElement('style');style.textContent=fs.readFileSync('css/editorial.css','utf8');w.document.head.appendChild(style);
+ w.eval(fs.readFileSync('js/theme.js','utf8'));
+ w.document.dispatchEvent(new w.Event('DOMContentLoaded'));
+ const button=w.document.getElementById('themeBtn');
+ button.click();t.tick();
+ assert.equal(w.document.documentElement.dataset.theme,'day');
+ assert.equal(button.getAttribute('aria-pressed'),'true');
+ assert.equal(w.localStorage.getItem('aarti-theme'),'day');
+ assert.equal(w.getComputedStyle(w.document.documentElement).getPropertyValue('--ed-base').trim(),'#f4f5ec');
+ assert.equal(w.document.querySelector('meta[name="theme-color"]').content,'#f4f5ec');
+ button.click();t.tick();
+ assert.equal(w.document.documentElement.dataset.theme,'night');
+ assert.equal(w.getComputedStyle(w.document.documentElement).getPropertyValue('--ed-base').trim(),'#0d1110');
+ w.localStorage.setItem('aarti-theme','day');w.eval(fs.readFileSync('js/theme.js','utf8'));
+ assert.equal(w.document.documentElement.dataset.theme,'day','Saved theme restored');
+ t.close();
+}
 const dom=new JSDOM(html);
 for(const el of dom.window.document.querySelectorAll('[src],link[rel="stylesheet"]')){
  const p=el.getAttribute('src')||el.getAttribute('href');

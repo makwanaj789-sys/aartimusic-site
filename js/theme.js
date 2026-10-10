@@ -12,7 +12,7 @@
   var root = document.documentElement;
   var KEY = 'aarti-theme';
   var DEFAULT = 'night';
-  var META_COLOR = { night:'#05050B', day:'#F5F3FA' };
+  var META_COLOR = { night:'#0d1110', day:'#f4f5ec' };
   var initialized = false;
 
   function valid(mode){ return mode === 'day' || mode === 'night'; }
