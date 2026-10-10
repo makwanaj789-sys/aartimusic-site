@@ -34,9 +34,9 @@
      a frame and a half a second, so a weak device — and anyone who
      sets gallery.flat — gets the same cards travelling flat, which
      is most of the effect at a fraction of the compositing. */
-  var cores = navigator.hardwareConcurrency || 4;
-  var mem   = navigator.deviceMemory || 4;
-  var flat  = cfg.flat === true || (cfg.flat !== false && (cores <= 4 || mem <= 4));
+  var cores = navigator.hardwareConcurrency || 6;
+  var mem   = navigator.deviceMemory || 8;
+  var flat  = cfg.flat === true || (cfg.flat !== false && (cores < 4 || mem < 4));
 
   if (reduced || cfg.enabled === false){
     section.classList.add('is-static');
@@ -59,11 +59,12 @@
 
   var top = 0, height = 1, vw = 0, active = -1;
   var ticking = false, onScreen = false;
+  var head = null, lastFrame = 0;
 
   function measure(){
     var r = section.getBoundingClientRect();
     top = r.top + window.scrollY;
-    height = Math.max(1, section.offsetHeight - window.innerHeight);
+    height = Math.max(1, section.offsetHeight - section.querySelector('.gallery-sticky').offsetHeight);
     vw = window.innerWidth;
 
     var narrow = vw <= 760;
@@ -76,19 +77,25 @@
        at an angle, which is the expensive half of this effect. A
        phone keeps a shallow turn and draws fewer neighbours; the
        rail still reads as depth, at about half the compositing. */
-    angle = flat ? 0 : (narrow ? 14 : 38);
+    angle = flat ? 0 : (narrow ? 22 : 38);
     depth = flat ? 0 : (narrow ? 300 : 680);
     if (flat) range = Math.min(range, 1.35);
-    render();
+    head = null;
+    onScroll();
   }
 
-  function render(){
+  function render(now){
     ticking = false;
     var raw = (window.scrollY - top) / height;
     var p = raw < 0 ? 0 : (raw > 1 ? 1 : raw);
 
     // Where the rail is, in card units.
-    var head = p * (n - 1);
+    var target = p * (n - 1);
+    var dt = lastFrame ? Math.min(64, now - lastFrame) : 16.67;
+    lastFrame = now;
+    if (head === null) head = target;
+    head += (target - head) * (1 - Math.exp(-dt / 65));
+    if (Math.abs(target - head) < .001) head = target;
 
     for (var i = 0; i < n; i++){
       var d = i - head;                 // signed distance from centre
@@ -128,7 +135,10 @@
     if (now !== active){
       active = now;
       for (var k = 0; k < n; k++) cards[k].classList.toggle('is-active', k === active);
-      for (var j = 0; j < dots.length; j++) dots[j].classList.toggle('on', j === active);
+      for (var j = 0; j < dots.length; j++) {
+        dots[j].classList.toggle('on', j === active);
+        dots[j].setAttribute('aria-current', j === active ? 'true' : 'false');
+      }
       if (count) count.textContent = '0' + (active + 1) + ' / 0' + n;
 
       /* Tell the rest of the page which effect is in front, so the
@@ -140,10 +150,11 @@
         }));
       }
     }
+    if (head !== target) onScroll();
   }
 
   function onScroll(){
-    if (ticking || !onScreen) return;
+    if (ticking || !onScreen || document.hidden) return;
     ticking = true;
     requestAnimationFrame(render);
   }
@@ -160,11 +171,16 @@
   if ('IntersectionObserver' in window){
     new IntersectionObserver(function(e){
       onScreen = e[0].isIntersecting;
-      if (onScreen) render();
+      if (onScreen) onScroll();
     }, { rootMargin: '20% 0px' }).observe(section);
   } else {
     onScreen = true;
   }
+
+  document.addEventListener('visibilitychange', function(){
+    lastFrame = 0;
+    if (!document.hidden) onScroll();
+  });
 
   // The dots scroll to a card rather than jumping the rail, so the
   // page and the gallery never disagree about where they are.
