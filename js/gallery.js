@@ -126,7 +126,7 @@
 
       card.style.transform =
         'translate3d(' + x.toFixed(1) + 'px,' + (Math.sin(d * 0.9) * 26).toFixed(1) + 'px,' +
-        z.toFixed(0) + 'px) rotateY(' + ry.toFixed(2) + 'deg) scale(' + scale.toFixed(3) + ')';
+        z.toFixed(0) + 'px) rotateY(' + ry.toFixed(2) + 'deg) rotateZ(' + (flat ? 0 : d * -4).toFixed(2) + 'deg) scale(' + scale.toFixed(3) + ')';
       card.style.opacity = op.toFixed(3);
       card.style.zIndex = String(100 - Math.round(ad * 10));
     }

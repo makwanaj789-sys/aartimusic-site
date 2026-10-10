@@ -21,7 +21,7 @@
   var renderer;
   try {
     renderer = new THREE.WebGLRenderer({canvas: canvas, alpha: true, antialias: false,
-      powerPreference: 'default', depth: false, stencil: false});
+      powerPreference: 'default', depth: true, stencil: false});
   } catch (_) { fallback(); return; }
   var scene = new THREE.Scene();
   var camera = new THREE.PerspectiveCamera(46, 1, .1, 100);
@@ -87,6 +87,40 @@
     line.rotation.set(j * .62, j * .48, j * .25);
     rig.add(line); orbits.push(line);
   }
+  // Lit solid geometry anchors the particles in a tangible three-dimensional space.
+  scene.add(new THREE.AmbientLight(0x688ab8, .8));
+  var key = new THREE.PointLight(0x67e8ff, 2.7, 70); key.position.set(-7, 7, 12); scene.add(key);
+  var rim = new THREE.PointLight(0x8d60ff, 3.4, 70); rim.position.set(8, -3, 6); scene.add(rim);
+  var white = new THREE.DirectionalLight(0xffffff, 1.4); white.position.set(2, 8, 12); scene.add(white);
+  var sculpture = new THREE.Group(); rig.add(sculpture);
+  var metal = new THREE.MeshPhongMaterial({color: 0x182c48, specular: 0xb5ecff, shininess: 110});
+  var bright = new THREE.MeshPhongMaterial({color: 0x58b5ce, specular: 0xffffff, shininess: 130});
+  var record = new THREE.Group(); sculpture.add(record);
+  var disc = new THREE.Mesh(new THREE.CylinderGeometry(2.9, 2.9, .32, small ? 64 : 96), metal);
+  disc.rotation.x = Math.PI / 2; record.add(disc);
+  for (var g = 0; g < 9; g++) {
+    var groove = new THREE.Mesh(new THREE.TorusGeometry(1.15 + g * .19, .014, 4, small ? 64 : 96), bright);
+    groove.position.z = .175; record.add(groove);
+  }
+  var labelDisc = new THREE.Mesh(new THREE.CylinderGeometry(.94, .94, .35, 48),
+    new THREE.MeshPhongMaterial({color: 0x7058ed, emissive: 0x28184b, specular: 0xffffff, shininess: 70}));
+  labelDisc.rotation.x = Math.PI / 2; record.add(labelDisc);
+  var hub = new THREE.Mesh(new THREE.TorusGeometry(.25, .07, 8, 32), bright); hub.position.z = .23; record.add(hub);
+  var knot = new THREE.Mesh(new THREE.TorusKnotGeometry(2.2, .58, small ? 80 : 144, small ? 8 : 14, 2, 3), bright);
+  sculpture.add(knot);
+  // One instanced draw for the 40 bars, instead of 40 separate meshes.
+  var bars = new THREE.InstancedMesh(new THREE.BoxGeometry(.11, 1, .25), bright, 40);
+  var dummy = new THREE.Object3D(); sculpture.add(bars);
+  var tunnel = new THREE.Group(); scene.add(tunnel);
+  var frameGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(14, 14, .3));
+  var frames = [];
+  for (var f = 0; f < 7; f++) {
+    var frameLine = new THREE.LineSegments(frameGeo, new THREE.LineBasicMaterial({
+      color: f % 2 ? 0x7f6cff : 0x48dacd, transparent: true, opacity: .28}));
+    tunnel.add(frameLine); frames.push(frameLine);
+  }
+  var flightTop = 0, flightHeight = 1, flight = 0;
+  var flightSection = document.getElementById('dimension');
   var quality = 1, raf = 0, previous = 0, elapsed = 0, bad = 0, kick = 0;
   var stage = 0, hero = 0, galleryTop = 0, galleryHeight = 1, heroHeight = 1;
   var gallery = document.getElementById('effects');
@@ -104,10 +138,15 @@
       galleryTop = gallery.getBoundingClientRect().top + scrollY;
       galleryHeight = Math.max(1, gallery.offsetHeight - h);
     }
+    if (flightSection) {
+      flightTop = flightSection.getBoundingClientRect().top + scrollY;
+      flightHeight = Math.max(1, flightSection.offsetHeight - h);
+    }
     scroll();
   }
   function scroll() {
     hero = Math.min(1, scrollY / Math.max(1, heroHeight));
+    flight = Math.max(0, Math.min(1, (scrollY - flightTop) / flightHeight));
     stage = hero + Math.max(0, Math.min(1, (scrollY - galleryTop) / galleryHeight));
     request();
   }
@@ -146,7 +185,31 @@
     uniforms.pulse.value = still ? 0 : Math.sin(elapsed * 1.8) * .5 + kick;
     uniforms.aim.value.set(x, y);
     rig.position.set(small ? 0 : (1 - hero) * 4.7, small ? (1 - hero) * 3.3 : 0, 0);
-    rig.scale.setScalar(small ? .68 : 1);
+    var journey = reduced ? 0 : flight;
+    rig.scale.setScalar((small ? .68 : 1) * (1 + Math.sin(journey * Math.PI) * .22));
+    camera.position.z = 18 - Math.sin(journey * Math.PI) * 3;
+    sculpture.rotation.set(.22 + journey * .65, -.35 + journey * Math.PI * 1.8, elapsed * .12);
+    record.scale.setScalar(Math.max(.001, 1 - Math.max(0, journey - .25) * 1.8));
+    record.visible = journey < .81;
+    knot.scale.setScalar(Math.max(.001, Math.min(1, (journey - .22) * 2)));
+    knot.visible = journey > .22;
+    for (var b = 0; b < 40; b++) {
+      var ba = b / 40 * Math.PI * 2;
+      var bh = .35 + (Math.sin(b * .73 + elapsed * 1.8) * .5 + .5) * .85;
+      dummy.position.set(Math.cos(ba) * 3.3, Math.sin(ba) * 3.3, 0);
+      dummy.rotation.z = ba - Math.PI / 2;
+      dummy.scale.set(1, bh, 1); dummy.updateMatrix(); bars.setMatrixAt(b, dummy.matrix);
+    }
+    bars.instanceMatrix.needsUpdate = true;
+    tunnel.position.x = small ? 0 : (1 - hero) * 4.7;
+    tunnel.position.y = small ? (1 - hero) * 3.3 : 0;
+    frames.forEach(function(line, index) {
+      line.position.z = 6 - index * 6 + journey * 14;
+      line.rotation.z = index * .16 + journey * .65 + (still ? 0 : elapsed * .018);
+      var distance = camera.position.z - line.position.z;
+      line.material.opacity = Math.max(0, Math.min(.32, (distance - 2) * .05));
+      line.visible = distance > 2;
+    });
     rig.rotation.set(still ? .15 : y * .16, still ? -.25 : -.25 + x * .3 + Math.sin(elapsed * .16) * .25, still ? 0 : elapsed * .035);
     orbits.forEach(function(line, index) {
       line.rotation.y = index * .48 + (still ? 0 : elapsed * .08);

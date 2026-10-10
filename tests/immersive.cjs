@@ -42,6 +42,17 @@ for(const width of [390,1440]){
  for(const c of w.document.querySelectorAll('.g-card'))assert(!c.style.transform.includes('NaN'));
  t.close();
 }
+{
+ const t=setup();const w=t.w;
+ Object.defineProperty(w.HTMLElement.prototype,'offsetHeight',{get(){return this.id==='dimension'?3200:800}});
+ t.load('js/dimension.js');
+ for(const [y,label] of [[0,'01'],[1000,'02'],[2400,'03']]){
+   w.scrollY=y;w.dispatchEvent(new w.Event('scroll'));t.tick();
+   assert(w.document.getElementById('dimensionCount').textContent.startsWith(label));
+   assert.equal(w.document.querySelectorAll('.dimension-caption[aria-hidden="false"]').length,1);
+ }
+ t.close();
+}
 // Every local script / stylesheet / image asset referenced by HTML must exist.
 const dom=new JSDOM(html);for(const e of dom.window.document.querySelectorAll('[src],link[rel="stylesheet"]')){
  const p=e.getAttribute('src')||e.getAttribute('href');if(p&&!p.startsWith('http')&&!p.startsWith('data:'))assert(fs.existsSync(p),p);
