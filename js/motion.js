@@ -69,8 +69,9 @@
   }
 
   // The scene scheduler calls this once per rendered frame.
-  M.update = function(){
-    M.x += (M.targetX - M.x) * M.ease;
-    M.y += (M.targetY - M.y) * M.ease;
+  M.update = function(dt){
+    var ease = 1 - Math.pow(1 - M.ease, (dt || 16.67) / 16.67);
+    M.x += (M.targetX - M.x) * ease;
+    M.y += (M.targetY - M.y) * ease;
   };
 })();

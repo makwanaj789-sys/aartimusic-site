@@ -1,390 +1,258 @@
-/* ============================================================
-   NEBULA
-   A single cloud of light. Tens of thousands of particles hold
-   the shape of a spinning record, breathe with a pulse, and blow
-   apart into a drifting nebula as the page scrolls — then gather
-   again. Colour is iridescent: violet through magenta into cyan
-   and gold, shifting with where a particle sits and how fast it
-   is moving.
-
-   HOW IT RUNS
-   The whole thing is ONE draw call. Every particle's position,
-   size, colour and life is computed in the vertex shader from a
-   per-particle seed and a handful of uniforms; JavaScript writes
-   about six floats per frame and never touches a particle. That
-   is why the count can be in the tens of thousands and still
-   leave the main thread free for scrolling.
-
-   Steering (mouse, finger, phone tilt) comes from motion.js.
-   ============================================================ */
-(function(){
-  if (typeof THREE === 'undefined') return;
-
+/* One GPU particle field, three scroll-driven forms. No per-frame layout reads.
+   Native scrolling stays in charge; quality changes resolution, never scroll speed. */
+(function () {
+  'use strict';
   var canvas = document.getElementById('scene');
-  if (!canvas) return;
-
-  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var cfg   = (window.AARTI && window.AARTI.scene) || {};
-  var width = window.innerWidth;
-  var small = width < 760;
-  var tiny  = width <= 420;
-
-  var cores = navigator.hardwareConcurrency || 4;
-  var mem   = navigator.deviceMemory || 4;
-  var weak  = cores <= 4 || mem <= 4;
-
-  /* Particle count is the one dial that matters. Vertices are
-     cheap; the pixels they cover are not, so the mobile tiers cut
-     hard and the governor below can still pull it down live. */
-  var COUNT = cfg.particles || 90000;
-  if (weak) COUNT = Math.round(COUNT * 0.30);
-  if (small) COUNT = Math.round(COUNT * 0.42);
-  if (tiny)  COUNT = Math.round(COUNT * 0.62);
-  COUNT = Math.max(6000, Math.min(COUNT, 160000));
-
-  var DPR_CAP = tiny ? 1 : (small ? 1.2 : (weak ? 1.25 : 1.6));
-  var REST = cfg.restOpacity === undefined ? 0.30 : cfg.restOpacity;
-
+  var button = document.getElementById('sceneToggle');
+  var root = document.documentElement;
+  function fallback() {
+    root.classList.add('no-webgl');
+    if (button) button.hidden = true;
+  }
+  if (!canvas || !window.THREE) { fallback(); return; }
+  var preference = matchMedia('(prefers-reduced-motion: reduce)');
+  var reduced = preference.matches, paused = false, lost = false;
+  var small = innerWidth < 760;
+  var weak = (navigator.hardwareConcurrency || 6) < 4 || (navigator.deviceMemory || 8) < 4;
+  var saveData = navigator.connection && navigator.connection.saveData;
+  var cfg = (window.AARTI && window.AARTI.scene) || {};
+  var count = Math.min(cfg.particles || 42000, small ? 14000 : 42000);
+  if (weak || saveData) count = 6000;
   var renderer;
   try {
-    renderer = new THREE.WebGLRenderer({
-      canvas: canvas, alpha: true,
-      antialias: false,               // points don't benefit; it just costs
-      powerPreference: (small || weak) ? 'low-power' : 'high-performance',
-      stencil: false, depth: false
-    });
-  } catch(e){
-    document.documentElement.classList.add('no-webgl');
-    return;
-  }
-
-  var dprCap = DPR_CAP;
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, dprCap));
-
-  var scene  = new THREE.Scene();
-  var camera = new THREE.PerspectiveCamera(50, 1, 0.1, 300);
-  var rig    = new THREE.Group();
+    renderer = new THREE.WebGLRenderer({canvas: canvas, alpha: true, antialias: false,
+      powerPreference: 'default', depth: true, stencil: false});
+  } catch (_) { fallback(); return; }
+  // Compress highlights before output; otherwise several lights clip to flat white.
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = .85;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(46, 1, .1, 100);
+  camera.position.z = 18;
+  var rig = new THREE.Group();
   scene.add(rig);
-
-  /* ---------- the particle cloud ----------------------------
-     Each particle carries a seed and nothing else. Where it sits
-     on the record, where it flies to when the cloud bursts, how
-     it drifts and what colour it takes are all derived from that
-     seed in the shader, so the buffer is written once. */
-  var N = COUNT;
-  var positions = new Float32Array(N * 3);   // required by three; the
-                                             // shader overwrites it
-  var seed  = new Float32Array(N * 4);
-  var seed2 = new Float32Array(N * 4);
-
-  for (var i = 0; i < N; i++){
-    var a = Math.random() * Math.PI * 2;            // angle on the record
-    var band = Math.random();                        // which groove
-    var rr = 0.52 + band * 0.48;                     // normalised radius (annulus)
-    var jitter = Math.pow(Math.random(), 2.2);       // clumping toward grooves
-
-    seed[i*4]     = a;
-    seed[i*4 + 1] = rr;
-    seed[i*4 + 2] = jitter;
-    seed[i*4 + 3] = Math.random();
-
-    // A second seed drives the burst direction and the drift.
-    var pa = Math.random() * Math.PI * 2;
-    var pz = Math.random() * 2 - 1;
-    seed2[i*4]     = pa;
-    seed2[i*4 + 1] = pz;
-    seed2[i*4 + 2] = Math.random();
-    seed2[i*4 + 3] = Math.random();
-  }
-
-  var geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geo.setAttribute('aSeed',  new THREE.BufferAttribute(seed, 4));
-  geo.setAttribute('aSeed2', new THREE.BufferAttribute(seed2, 4));
-  // The shader places everything, so three.js cannot infer bounds.
-  geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 60);
-
-  var VERT = [
-    'attribute vec4 aSeed;',
-    'attribute vec4 aSeed2;',
-    'uniform float uTime;',
-    'uniform float uBurst;',     // 0 = record, 1 = nebula
-    'uniform float uPulse;',
-    'uniform float uSize;',
-    'uniform float uPixelRatio;',
-    'uniform vec2  uPointer;',
-    'varying float vTone;',
-    'varying float vGlow;',
-
-    'const float TAU = 6.2831853;',
-
-    // Cheap hash-based value noise — enough for organic drift, and
-    // far cheaper than a real simplex implementation per vertex.
-    'float hash(float n){ return fract(sin(n) * 43758.5453123); }',
-
-    'void main(){',
-    '  float ang  = aSeed.x;',
-    '  float rr   = aSeed.y;',
-    '  float jit  = aSeed.z;',
-    '  float rnd  = aSeed.w;',
-
-    /* ---- the gathered shape: a record, grooved and warped ---- */
-    '  float radius = 6.6 * rr;',
-    // Grooves: push particles toward discrete rings.
-    '  float groove = sin(rr * 46.0) * 0.055;',
-    '  radius += groove;',
-    // A slow warp so the disc is never perfectly flat.
-    '  float warp = sin(ang * 3.0 + uTime * 0.35) * 0.30 + sin(rr * 8.0 - uTime * 0.5) * 0.22;',
-    '  float spin = uTime * 0.30;',
-    '  vec3 formed = vec3(',
-    '    cos(ang + spin) * radius,',
-    '    warp * (0.35 + jit * 0.9) + (rnd - 0.5) * 0.55,',
-    '    sin(ang + spin) * radius',
-    '  );',
-    // The pulse pushes the whole record outward on the beat.
-    '  formed.xz *= 1.0 + uPulse * 0.075 * (0.4 + 0.6 * jit);',
-
-    /* ---- the burst: a slow nebula the cloud expands into ---- */
-    '  float pa = aSeed2.x, pz = aSeed2.y, pr = aSeed2.z, pd = aSeed2.w;',
-    '  float sr = sqrt(max(0.0, 1.0 - pz * pz));',
-    '  vec3 dir = vec3(cos(pa) * sr, pz, sin(pa) * sr);',
-    '  float reach = 9.0 + pr * 26.0;',
-    '  vec3 burst = dir * reach;',
-    // Drift so the nebula keeps moving instead of sitting still.
-    '  burst.x += sin(uTime * 0.22 + pd * TAU) * 2.2;',
-    '  burst.y += cos(uTime * 0.18 + pr * TAU) * 1.8;',
-    '  burst.z += sin(uTime * 0.15 + pa) * 2.2;',
-
-    /* Particles do not all leave at once — each has its own
-       threshold, so the record dissolves from the edges inward
-       instead of snapping. */
-    '  float lag = smoothstep(0.0, 1.0, clamp((uBurst - pd * 0.55) / 0.45, 0.0, 1.0));',
-    '  vec3 pos = mix(formed, burst, lag);',
-
-    /* ---- pointer repulsion, in world space ---- */
-    '  vec2 toP = pos.xz - uPointer * 7.0;',
-    '  float d = length(toP);',
-    '  pos.xz += normalize(toP + 0.0001) * (1.6 / (1.0 + d * d * 0.35));',
-
-    '  vec4 mv = modelViewMatrix * vec4(pos, 1.0);',
-    '  float dist = -mv.z;',
-
-    /* Colour band: where it sits on the record, plus how far it
-       has travelled. Read by the fragment shader as a ramp. */
-    '  vTone = fract(ang / TAU + uTime * 0.03 + lag * 0.22 + rr * 0.10 + rnd * 0.02);',
-    '  vGlow = (0.35 + 0.65 * jit) * (1.0 - lag * 0.55) * (0.6 + 0.4 * uPulse);',
-
-    '  gl_PointSize = uSize * uPixelRatio * (0.5 + jit * 0.9) / max(dist, 0.001);',
-    '  gl_Position = projectionMatrix * mv;',
-    '}'
-  ].join('\n');
-
-  var FRAG = [
-    'uniform vec3 uA;',   // violet
-    'uniform vec3 uB;',   // magenta
-    'uniform vec3 uC;',   // cyan
-    'uniform vec3 uD;',   // gold
-    'uniform float uOpacity;',
-    'varying float vTone;',
-    'varying float vGlow;',
-    'void main(){',
-    // Round the square point into a soft dot.
-    '  vec2 uv = gl_PointCoord - 0.5;',
-    '  float r2 = dot(uv, uv);',
-    '  if (r2 > 0.25) discard;',
-    '  float fall = 1.0 - smoothstep(0.0, 0.25, r2);',
-
-    /* A four-stop iridescent ramp. Each particle sits somewhere on
-       it, so the cloud reads as one continuous spectrum rather
-       than four coloured groups. */
-    '  float t = vTone * 4.0;',
-    '  vec3 col;',
-    '  if (t < 1.0)      col = mix(uA, uB, t);',
-    '  else if (t < 2.0) col = mix(uB, uC, t - 1.0);',
-    '  else if (t < 3.0) col = mix(uC, uD, t - 2.0);',
-    '  else              col = mix(uD, uA, t - 3.0);',
-
-    /* Each particle contributes very little. Hundreds overlap in
-       the bright grooves, and additive blending sums them — at a
-       higher per-particle alpha that sum clips to white and the
-       whole ramp disappears into grey. */
-    '  float a = fall * fall * vGlow * uOpacity * 0.10;',
-    '  if (a < 0.004) discard;',
-    /* Push saturation before it is summed: additive blending
-       washes hue out toward white, so the colour going in has to
-       be more saturated than the colour you want coming out. */
-    '  col = mix(vec3(dot(col, vec3(0.299, 0.587, 0.114))), col, 1.45);',
-    '  gl_FragColor = vec4(max(col, 0.0) * (1.0 + fall * 2.2), a);',
-    '}'
-  ].join('\n');
-
-  var PAL = cfg.palette || {};
+  var seeds = new Float32Array(count * 3);
+  for (var i = 0; i < seeds.length; i++) seeds[i] = Math.random();
+  var geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(seeds, 3));
   var uniforms = {
-    uTime:   { value: 0 },
-    uBurst:  { value: 0 },
-    uPulse:  { value: 0 },
-    uSize:   { value: small ? 120 : 105 },
-    uPixelRatio: { value: renderer.getPixelRatio() },
-    uPointer:{ value: new THREE.Vector2(0, 0) },
-    uOpacity:{ value: 1 },
-    uA: { value: new THREE.Color(PAL.a || '#7C4DFF') },
-    uB: { value: new THREE.Color(PAL.b || '#FF3DA6') },
-    uC: { value: new THREE.Color(PAL.c || '#35E6E2') },
-    uD: { value: new THREE.Color(PAL.d || '#FFC46B') }
+    time: {value: 0}, form: {value: 0}, pulse: {value: 0},
+    pixel: {value: 1}, hue: {value: 0}, day: {value: 0}, aim: {value: new THREE.Vector2()}
   };
-
-  var mat = new THREE.ShaderMaterial({
-    vertexShader: VERT, fragmentShader: FRAG,
-    uniforms: uniforms,
-    transparent: true, depthWrite: false, depthTest: false,
-    blending: THREE.AdditiveBlending
+  var material = new THREE.ShaderMaterial({
+    uniforms: uniforms, transparent: true, depthWrite: false, depthTest: false,
+    blending: THREE.AdditiveBlending,
+    vertexShader: [
+      'uniform float time,form,pulse,pixel; uniform vec2 aim;',
+      'varying float tone,light; const float PI=3.14159265;',
+      'void main(){',
+      'float a=position.x*2.0*PI; float b=position.y*2.0*PI;',
+      'float r=3.7+0.85*cos(b)+0.22*sin(a*5.0+time*.6);',
+      'vec3 ring=vec3(r*cos(a),r*sin(a),.85*sin(b));',
+      'ring.xy*=1.0+pulse*.035;',
+      'float z=position.y*2.0-1.0; float sr=sqrt(max(0.0,1.0-z*z));',
+      'vec3 sphere=vec3(sr*cos(a),z,sr*sin(a))*(3.6+.18*sin(b*8.0+time));',
+      'float x=(position.x-.5)*15.0;',
+      'vec3 wave=vec3(x,sin(x*.65+time*.45+b)*1.5,cos(x*.45+b)*2.0);',
+      'vec3 p=mix(ring,sphere,smoothstep(0.0,1.0,form));',
+      'p=mix(p,wave,smoothstep(1.0,2.0,form));',
+      'p+=normalize(p+.001)*(position.z-.5)*.28;',
+      'vec2 delta=p.xy-aim*4.0; p.xy+=delta*.22/(1.0+dot(delta,delta));',
+      'vec4 mv=modelViewMatrix*vec4(p,1.0);',
+      'gl_Position=projectionMatrix*mv;',
+      'gl_PointSize=clamp(pixel*(18.0+position.z*26.0)/max(1.0,-mv.z),1.0,4.0*pixel);',
+      'tone=position.x+position.y*.2; light=.35+position.z*.65;',
+      '}'
+    ].join('\n'),
+    fragmentShader: [
+      'uniform float hue,day; varying float tone,light;',
+      'void main(){',
+      'vec2 p=gl_PointCoord-.5; float d=dot(p,p); if(d>.25)discard;',
+      'vec3 c=.5+.5*cos(6.28318*(tone*.65+hue+vec3(.05,.36,.58)));',
+      'c=mix(c,vec3(.12,.9,1.),.22); c=mix(c,c*.45,day);',
+      'gl_FragColor=vec4(c,(1.0-smoothstep(.0,.25,d))*light*.28);',
+      '}'
+    ].join('\n')
   });
-
-  var cloud = new THREE.Points(geo, mat);
-  cloud.frustumCulled = false;
-  rig.add(cloud);
-
-  /* ---------- theme -----------------------------------------
-     The nebula is additive light, which only exists against a
-     dark page. Day mode keeps the same hues but drops the
-     brightness so the cloud reads as ink rather than neon. */
-  window.__sceneTheme = function(mode){
-    var day = (mode === 'day');
-    mat.blending = day ? THREE.NormalBlending : THREE.AdditiveBlending;
-    uniforms.uOpacity.value = day ? 0.42 : 1;
-    mat.needsUpdate = true;
-  };
-  window.__sceneTheme(document.documentElement.getAttribute('data-theme'));
-  document.documentElement.addEventListener('aarti:themechange', function(e){
-    var m = e && e.detail && e.detail.mode;
-    if (m === 'day' || m === 'night') window.__sceneTheme(m);
-  });
-
-  /* ---------- framing --------------------------------------- */
-  var quality = 1;
-  var resizeTimer = 0;
-  function applySize(){
+  var field = new THREE.Points(geometry, material);
+  field.frustumCulled = false;
+  rig.add(field);
+  // Thin orbital contours give the cloud a readable three-dimensional silhouette.
+  var orbits = [];
+  for (var j = 0; j < 3; j++) {
+    var points = [];
+    for (var k = 0; k < 160; k++) {
+      var angle = k / 160 * Math.PI * 2;
+      points.push(new THREE.Vector3(Math.cos(angle) * (4.9 + j * .3), Math.sin(angle) * (4.9 + j * .3), 0));
+    }
+    var line = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(points),
+      new THREE.LineBasicMaterial({color: j === 1 ? 0x73f4de : 0x6495ff, transparent: true, opacity: .3}));
+    line.rotation.set(j * .62, j * .48, j * .25);
+    rig.add(line); orbits.push(line);
+  }
+  // Lit solid geometry anchors the particles in a tangible three-dimensional space.
+  scene.add(new THREE.AmbientLight(0x8ba9c8, .48));
+  var key = new THREE.PointLight(0x67c8df, .85, 70); key.position.set(-7, 7, 12); scene.add(key);
+  var rim = new THREE.PointLight(0x8060dd, 1.0, 70); rim.position.set(8, -3, 6); scene.add(rim);
+  var white = new THREE.DirectionalLight(0xc7e3ff, .65); white.position.set(2, 8, 12); scene.add(white);
+  var sculpture = new THREE.Group(); rig.add(sculpture);
+  var metal = new THREE.MeshStandardMaterial({color: 0x102637, roughness: .48, metalness: .32});
+  var bright = new THREE.MeshStandardMaterial({color: 0x227e91, roughness: .4, metalness: .28});
+  var record = new THREE.Group(); sculpture.add(record);
+  var disc = new THREE.Mesh(new THREE.CylinderGeometry(2.9, 2.9, .32, small ? 64 : 96), metal);
+  disc.rotation.x = Math.PI / 2; record.add(disc);
+  for (var g = 0; g < 9; g++) {
+    var groove = new THREE.Mesh(new THREE.TorusGeometry(1.15 + g * .19, .014, 4, small ? 64 : 96), bright);
+    groove.position.z = .175; record.add(groove);
+  }
+  var labelDisc = new THREE.Mesh(new THREE.CylinderGeometry(.94, .94, .35, 48),
+    new THREE.MeshStandardMaterial({color: 0x5546a1, roughness: .58, metalness: .15}));
+  labelDisc.rotation.x = Math.PI / 2; record.add(labelDisc);
+  var hub = new THREE.Mesh(new THREE.TorusGeometry(.25, .07, 8, 32), bright); hub.position.z = .23; record.add(hub);
+  var knot = new THREE.Mesh(new THREE.TorusKnotGeometry(2.2, .58, small ? 80 : 144, small ? 8 : 14, 2, 3), bright);
+  sculpture.add(knot);
+  // One instanced draw for the 40 bars, instead of 40 separate meshes.
+  var bars = new THREE.InstancedMesh(new THREE.BoxGeometry(.11, 1, .25), bright, 40);
+  var dummy = new THREE.Object3D(); sculpture.add(bars);
+  var tunnel = new THREE.Group(); scene.add(tunnel);
+  var frameGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(14, 14, .3));
+  var frames = [];
+  for (var f = 0; f < 4; f++) {
+    var frameLine = new THREE.LineSegments(frameGeo, new THREE.LineBasicMaterial({
+      color: f % 2 ? 0x7f6cff : 0x48dacd, transparent: true, opacity: .28}));
+    tunnel.add(frameLine); frames.push(frameLine);
+  }
+  var flightTop = 0, flightHeight = 1, flight = 0, exit = 0;
+  var flightSection = document.getElementById('dimension');
+  var quality = 1, raf = 0, previous = 0, elapsed = 0, bad = 0, kick = 0;
+  var stage = 0, hero = 0, galleryTop = 0, galleryHeight = 1, heroHeight = 1;
+  var gallery = document.getElementById('effects');
+  var heroEl = document.getElementById('hero');
+  function size() {
+    small = innerWidth < 760;
     var w = canvas.clientWidth, h = canvas.clientHeight;
     if (!w || !h) return;
-    var liveSmall = w < 760, liveTiny = w <= 420;
-    dprCap = liveTiny ? 1 : (liveSmall ? 1.2 : (weak ? 1.25 : 1.6));
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, dprCap * quality));
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, small || weak ? 1.25 : 1.7) * quality);
     renderer.setSize(w, h, false);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-    uniforms.uPixelRatio.value = renderer.getPixelRatio();
-  }
-  function requestResize(){
-    // Mobile fires resize on every URL-bar nudge; reallocating the
-    // drawing buffer per scroll pixel is its own kind of jank.
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(applySize, 140);
-  }
-  window.addEventListener('resize', requestResize, { passive:true });
-  window.addEventListener('orientationchange', requestResize, { passive:true });
-  applySize();
-
-  /* ---------- run state ------------------------------------- */
-  var visible = true, onScreen = true, running = false;
-  document.addEventListener('visibilitychange', function(){
-    visible = !document.hidden; if (visible) start();
-  });
-  if ('IntersectionObserver' in window){
-    new IntersectionObserver(function(e){
-      onScreen = e[0].isIntersecting; if (onScreen) start();
-    }, { threshold: 0 }).observe(canvas);
-  }
-
-  var minInterval = (small || weak) ? (1000 / 30) - 1 : 0;
-
-  /* ---------- quality governor ------------------------------
-     Points are fill-bound, so the lever that actually helps is
-     resolution. Frame cost decides, not a device string. */
-  var slowFrames = 0, fastFrames = 0;
-  function governor(dt){
-    var over  = minInterval ? 42 : 26;
-    var under = minInterval ? 30 : 15;
-    if (dt > over){ slowFrames++; fastFrames = 0; }
-    else if (dt < under){ fastFrames++; slowFrames = 0; }
-    if (slowFrames > 45 && quality > 0.55){
-      quality = Math.max(0.55, quality - 0.2); slowFrames = 0; applySize();
-    } else if (fastFrames > 240 && quality < 1){
-      quality = Math.min(1, quality + 0.2); fastFrames = 0; applySize();
+    uniforms.pixel.value = renderer.getPixelRatio();
+    camera.aspect = w / h; camera.updateProjectionMatrix();
+    heroHeight = heroEl ? heroEl.offsetHeight : h;
+    if (gallery) {
+      galleryTop = gallery.getBoundingClientRect().top + scrollY;
+      galleryHeight = Math.max(1, gallery.offsetHeight - h);
     }
-  }
-
-  /* ---------- reacting to the page --------------------------
-     The gallery announces which effect is in front. The cloud
-     answers with a kick that decays over about a second, so
-     moving through the rail feels connected to the scene behind
-     it rather than happening in front of a loop. */
-  var kick = 0;
-  document.documentElement.addEventListener('aarti:effect', function(){
-    kick = 1;
-  });
-
-  /* ---------- render ---------------------------------------- */
-  var motion = window.AARTI_MOTION || { x:0, y:0 };
-  var progress = window.AARTI_SCROLL || { progress:0, hero:0 };
-  var lastOpacity = -1;
-  var t0 = performance.now(), prev = t0;
-  function smoothstep(t){ return t * t * (3 - 2 * t); }
-
-  function frame(now){
-    if (!visible || !onScreen){ running = false; return; }
-    requestAnimationFrame(frame);
-    var dt = now - prev;
-    if (minInterval && dt < minInterval) return;   // keep prev; cadence stays even
-    prev = now;
-    governor(dt);
-
-    var t = (now - t0) / 1000;
-    if (motion && typeof motion.update === 'function') motion.update();
-
-    progress = window.AARTI_SCROLL || progress;
-    var p = progress.progress || 0;
-    var heroP = progress.hero || 0;
-
-    /* The record holds through the hero, bursts as you leave it,
-       and hangs as a nebula for the rest of the page. */
-    var burst = smoothstep(Math.min(1, Math.max(0, (heroP - 0.05) / 0.85)));
-    uniforms.uBurst.value = burst;
-    uniforms.uTime.value = t;
-    // Decay is framerate-independent, so a 30fps phone and a
-    // 60fps desktop see the same kick over the same wall time.
-    if (kick > 0) kick = Math.max(0, kick - dt / 900);
-    var beat = Math.pow(Math.sin(t * 1.15) * 0.5 + 0.5, 2.4);
-    uniforms.uPulse.value = reduced ? 0.4 : Math.min(1.6, beat + kick * kick * 1.1);
-    uniforms.uPointer.value.set(motion.x, motion.y);
-
-    var vis = Math.max(REST, 1 - heroP * 0.42);
-    if (Math.abs(vis - lastOpacity) > 0.004){
-      canvas.style.opacity = vis.toFixed(3);
-      lastOpacity = vis;
+    if (flightSection) {
+      flightTop = flightSection.getBoundingClientRect().top + scrollY;
+      flightHeight = Math.max(1, flightSection.offsetHeight - h);
     }
-
-    // The camera pulls back and rises, so the disc turns from a
-    // ring into a horizon as the page runs on.
-    var dist = 14.5 + smoothstep(p) * 15.0;
-    var elev = 0.46 + smoothstep(p) * 0.50 - motion.y * 0.12;
-    var pan  = motion.x * 0.22 + p * 0.5;
-
-    camera.position.set(
-      Math.sin(pan)  * dist * Math.cos(elev),
-      Math.sin(elev) * dist + 0.9,
-      Math.cos(pan)  * dist * Math.cos(elev)
-    );
-    camera.lookAt(0, -p * 1.4, 0);
-
-    rig.rotation.z = motion.x * 0.06;
-    rig.rotation.x = motion.y * 0.10;
-
+    scroll();
+  }
+  function scroll() {
+    hero = Math.min(1, scrollY / Math.max(1, heroHeight));
+    flight = Math.max(0, Math.min(1, (scrollY - flightTop) / flightHeight));
+    exit = flightSection ? Math.max(0, Math.min(1, (scrollY - flightTop - flightHeight) / Math.max(1, innerHeight * .65))) : 0;
+    stage = hero + Math.max(0, Math.min(1, (scrollY - galleryTop) / galleryHeight));
+    request();
+  }
+  function theme() {
+    var day = root.getAttribute('data-theme') === 'day';
+    uniforms.day.value = day ? 1 : 0;
+    material.blending = day ? THREE.NormalBlending : THREE.AdditiveBlending;
+    material.needsUpdate = true; request();
+  }
+  function label() {
+    if (!button) return;
+    button.hidden = reduced;
+    button.textContent = paused ? 'Resume 3D' : 'Pause 3D';
+    button.setAttribute('aria-pressed', String(paused));
+    button.setAttribute('aria-label', paused ? 'Resume 3D background animation' : 'Pause 3D background animation');
+  }
+  function frame(now) {
+    raf = 0;
+    if (document.hidden || lost) return;
+    var dt = previous ? Math.min(now - previous, 100) : 16.67;
+    previous = now;
+    var still = reduced || paused;
+    if (!still) elapsed += dt / 1000;
+    // Sustained missed frames lower fill cost, without imposing a 30 FPS cap.
+    if (!still && dt > 24) bad++; else bad = Math.max(0, bad - 1);
+    if (bad > 50 && quality > .6) {
+      quality = Math.max(.6, quality - .15); bad = 0; size();
+    }
+    var motion = window.AARTI_MOTION;
+    if (!still && motion && motion.update) motion.update(dt);
+    var x = still || !motion ? 0 : motion.x;
+    var y = still || !motion ? 0 : motion.y;
+    kick *= Math.exp(-dt / 350);
+    uniforms.time.value = elapsed;
+    uniforms.form.value = reduced ? 0 : stage;
+    uniforms.pulse.value = still ? 0 : Math.sin(elapsed * 1.8) * .5 + kick;
+    uniforms.aim.value.set(x, y);
+    rig.position.set(small ? 0 : (1 - hero) * 4.7, small ? (1 - hero) * 3.3 + hero * 2.0 : 0, 0);
+    var journey = reduced ? 0 : flight;
+    rig.scale.setScalar((small ? .60 : .92) * (1 + Math.sin(journey * Math.PI) * .10));
+    sculpture.visible = exit < 1;
+    sculpture.scale.setScalar(1 - exit * .3);
+    canvas.style.opacity = String(1 - exit * .82);
+    tunnel.visible = exit < 1;
+    camera.position.z = 18 - Math.sin(journey * Math.PI) * 1.2;
+    sculpture.rotation.set(.22 + journey * .65, -.35 + journey * Math.PI * 1.8, elapsed * .12);
+    record.scale.setScalar(Math.max(.001, 1 - Math.max(0, journey - .25) * 1.8));
+    record.visible = journey < .81;
+    knot.scale.setScalar(Math.max(.001, Math.min(1, (journey - .22) * 2)));
+    knot.visible = journey > .22;
+    for (var b = 0; b < 40; b++) {
+      var ba = b / 40 * Math.PI * 2;
+      var bh = .35 + (Math.sin(b * .73 + elapsed * 1.8) * .5 + .5) * .85;
+      dummy.position.set(Math.cos(ba) * 3.3, Math.sin(ba) * 3.3, 0);
+      dummy.rotation.z = ba - Math.PI / 2;
+      dummy.scale.set(1, bh, 1); dummy.updateMatrix(); bars.setMatrixAt(b, dummy.matrix);
+    }
+    bars.instanceMatrix.needsUpdate = true;
+    tunnel.position.x = small ? 0 : (1 - hero) * 4.7;
+    tunnel.position.y = small ? (1 - hero) * 3.3 + hero * 2.0 : 0;
+    frames.forEach(function(line, index) {
+      line.position.z = 6 - index * 6 + journey * 14;
+      line.rotation.z = index * .16 + journey * .65 + (still ? 0 : elapsed * .018);
+      var distance = camera.position.z - line.position.z;
+      line.material.opacity = Math.max(0, Math.min(.13, (distance - 2) * .025) * (1 - exit));
+      line.visible = distance > 2;
+    });
+    rig.rotation.set(still ? .15 : y * .12, still ? -.25 : -.25 + x * .24 + Math.sin(elapsed * .16) * .18, still ? 0 : Math.sin(elapsed * .12) * .09);
+    orbits.forEach(function(line, index) {
+      line.rotation.y = index * .48 + (still ? 0 : elapsed * .08);
+      line.material.opacity = (.22 - hero * .12) * (uniforms.day.value ? .65 : 1);
+    });
     renderer.render(scene, camera);
+    if (!still) request();
   }
-  function start(){
-    if (running) return;
-    running = true; prev = performance.now();
-    requestAnimationFrame(frame);
-  }
-  start();
+  function request() { if (!raf && !document.hidden && !lost) raf = requestAnimationFrame(frame); }
+  if (button) button.addEventListener('click', function() {
+    paused = !paused; previous = 0; label(); request();
+  });
+  function preferenceChanged() { reduced = preference.matches; previous = 0; label(); request(); }
+  if (preference.addEventListener) preference.addEventListener('change', preferenceChanged);
+  else preference.addListener(preferenceChanged);
+  addEventListener('scroll', scroll, {passive: true});
+  var resizeTimer;
+  addEventListener('resize', function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(size, 150); }, {passive: true});
+  addEventListener('load', size);
+  if (document.fonts) document.fonts.ready.then(size);
+  if (window.ResizeObserver && document.querySelector('main')) new ResizeObserver(size).observe(document.querySelector('main'));
+  document.addEventListener('visibilitychange', function() {
+    if (raf) cancelAnimationFrame(raf);
+    raf = 0; previous = 0; request();
+  });
+  canvas.addEventListener('webglcontextlost', function(e) {
+    e.preventDefault(); lost = true; if (raf) cancelAnimationFrame(raf); raf = 0; fallback();
+  });
+  canvas.addEventListener('webglcontextrestored', function() {
+    lost = false; root.classList.remove('no-webgl'); previous = 0; label(); size(); request();
+  });
+  root.addEventListener('aarti:themechange', theme);
+  root.addEventListener('aarti:effect', function(e) {
+    kick = 1; uniforms.hue.value = ((e.detail && e.detail.index) || 0) * .075; request();
+  });
+  label(); size(); theme();
 })();

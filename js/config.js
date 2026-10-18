@@ -50,7 +50,7 @@ window.AARTI = {
      mouse, a dragging finger, or the phone's own tilt.          */
   motion: {
     ease: 0.075,   // how lazily it follows. 0.02 is syrup, 0.2 is snappy
-    gyro: true     // false switches off phone-tilt steering everywhere
+    gyro: false     // false switches off phone-tilt steering everywhere
   },
 
   /* --- card tilt --- */
@@ -107,28 +107,11 @@ window.AARTI = {
     enabled: true
   },
 
-  /* --- the nebula ---
-     One cloud of particles that holds the shape of a spinning
-     record through the hero, then bursts into a drifting nebula
-     as you scroll. It is drawn in a single call and animated
-     entirely in the vertex shader, so the particle count below
-     costs the CPU nothing — raising it changes what you see, not
-     what it costs to run. Fill rate is the real limit, so the
-     scene halves the count on phones and lowers resolution by
-     itself if it measures frames running long.                 */
+  /* --- GPU portal ---
+     Mobile caps this at 14,000 points (6,000 with Save Data or low memory).
+     Sustained slow frames lower render resolution instead of limiting FPS.
+     Three forms follow native scroll: portal, sphere, then a flowing ribbon. */
   scene: {
-    particles: 90000,
-
-    /* The four lights of the ramp. Every particle sits somewhere
-       between them, so the cloud reads as one spectrum. */
-    palette: {
-      a: '#7C4DFF',   // violet
-      b: '#FF3DA6',   // magenta
-      c: '#35E6E2',   // cyan
-      d: '#FFC46B'    // gold
-    },
-
-    /* What is left of the cloud once the hero has scrolled away. */
-    restOpacity: 0.30
+    particles: 42000
   }
 };
